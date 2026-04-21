@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSO - Intranet Corporativa</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ═══════════════════════ LOGIN ═══════════════════════ -->
+<div id="login-view">
+  <div class="login-bg"></div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-pulse">
+        <span>P</span>
+      </div>
+      <h1>PULSO</h1>
+      <p>Intranet Corporativa</p>
+    </div>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="login-email">Correo electrónico</label>
+        <input type="email" id="login-email" placeholder="usuario@empresa.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="login-password">Contraseña</label>
+        <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <div id="login-error" class="alert-error hidden"></div>
+      <button type="submit" class="btn btn-primary btn-full">Ingresar al Sistema</button>
+    </form>
+    <div class="login-hint">
+      <strong>Usuarios de prueba:</strong><br>
+      ana@empresa.com / admin123 (Admin RRHH)<br>
+      carlos@empresa.com / lider123 (Líder)<br>
+      maria@empresa.com / colab123 · juan@empresa.com / colab123 (Colaboradores)
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ APP ═══════════════════════ -->
+<div id="app-view" class="hidden">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="logo-pulse-sm">P</div>
+        <span class="logo-title">PULSO</span>
+      </div>
+      <button class="sidebar-close" onclick="toggleSidebar()" title="Colapsar menú">&#8249;</button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">PRINCIPAL</div>
+      <a class="nav-item" data-view="home" onclick="navigate('home')">
+        <span class="nav-icon">&#8962;</span>
+        <span class="nav-label">Inicio</span>
+      </a>
+      <a class="nav-item" data-view="certificados" onclick="navigate('certificados')">
+        <span class="nav-icon">&#128196;</span>
+        <span class="nav-label">Certificados</span>
+      </a>
+      <a class="nav-item" data-view="solicitudes" onclick="navigate('solicitudes')">
+        <span class="nav-icon">&#128203;</span>
+        <span class="nav-label">Solicitudes</span>
+      </a>
+      <a class="nav-item" data-view="ausencias" onclick="navigate('ausencias')">
+        <span class="nav-icon">&#128197;</span>
+        <span class="nav-label">Ausencias</span>
+      </a>
+
+      <div class="nav-section-label">FORMACIÓN</div>
+      <a class="nav-item" data-view="sst" onclick="navigate('sst')">
+        <span class="nav-icon">&#9737;</span>
+        <span class="nav-label">SST</span>
+      </a>
+      <a class="nav-item" data-view="ciberseguridad" onclick="navigate('ciberseguridad')">
+        <span class="nav-icon">&#128274;</span>
+        <span class="nav-label">Ciberseguridad</span>
+      </a>
+
+      <div class="nav-section-label">EMPRESA</div>
+      <a class="nav-item" data-view="pqr" onclick="navigate('pqr')">
+        <span class="nav-icon">&#128172;</span>
+        <span class="nav-label">PQR</span>
+      </a>
+      <a class="nav-item" data-view="informacion" onclick="navigate('informacion')">
+        <span class="nav-icon">&#127970;</span>
+        <span class="nav-label">Info Corporativa</span>
+      </a>
+      <a class="nav-item" data-view="perfil" onclick="navigate('perfil')">
+        <span class="nav-icon">&#128100;</span>
+        <span class="nav-label">Mi Perfil</span>
+      </a>
+
+      <div class="nav-section-label admin-only hidden">ADMINISTRACIÓN</div>
+      <a class="nav-item admin-only hidden" data-view="admin" onclick="navigate('admin')">
+        <span class="nav-icon">&#9881;</span>
+        <span class="nav-label">Panel Admin</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar-sm" id="sidebar-avatar"></div>
+        <div class="sidebar-user-info">
+          <span id="sidebar-user-name" class="sidebar-user-nm"></span>
+          <span id="sidebar-user-role" class="sidebar-user-role"></span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN WRAPPER -->
+  <div id="main-wrapper">
+    <header id="app-header">
+      <div class="header-left">
+        <button class="hamburger" onclick="toggleSidebar()">&#9776;</button>
+        <div id="breadcrumb" class="breadcrumb"></div>
+      </div>
+      <div class="header-right">
+        <div class="header-user-info">
+          <span id="header-user-name"></span>
+          <span id="header-role-badge" class="role-badge"></span>
+        </div>
+        <button class="btn-logout" onclick="handleLogout()">Salir</button>
+      </div>
+    </header>
+
+    <main id="content" class="content-area"></main>
+  </div>
+</div>
+
+<!-- ═══════════════════════ MODAL ═══════════════════════ -->
+<div id="modal-overlay" class="modal-overlay hidden">
+  <div id="modal-box" class="modal-box">
+    <div class="modal-header">
+      <h3 id="modal-title"></h3>
+      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    </div>
+    <div id="modal-body" class="modal-body"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

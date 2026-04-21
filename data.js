@@ -1,0 +1,286 @@
+/* ═══════════════════════════════════════════════════════
+   PULSO - Data Layer & localStorage Management
+   ═══════════════════════════════════════════════════════ */
+
+const SEED = {
+  users: [
+    { id: 1, name: 'Ana García', email: 'ana@empresa.com', password: 'admin123', role: 'admin_rrhh', cargo: 'Gerente de RRHH', area: 'Recursos Humanos', ingreso: '2020-01-15', phone: '+57 300 123 4567', active: true, birthday: '1988-04-15' },
+    { id: 2, name: 'Carlos López', email: 'carlos@empresa.com', password: 'lider123', role: 'lider', cargo: 'Jefe de Proyectos', area: 'Tecnología', ingreso: '2019-06-01', phone: '+57 311 234 5678', active: true, birthday: '1985-07-22' },
+    { id: 3, name: 'María Rodríguez', email: 'maria@empresa.com', password: 'colab123', role: 'colaborador', cargo: 'Desarrolladora Senior', area: 'Tecnología', ingreso: '2022-03-10', phone: '+57 320 345 6789', active: true, birthday: '1993-04-21' },
+    { id: 4, name: 'Juan Martínez', email: 'juan@empresa.com', password: 'colab123', role: 'colaborador', cargo: 'Analista Financiero', area: 'Finanzas', ingreso: '2021-08-20', phone: '+57 315 456 7890', active: true, birthday: '1990-11-03' }
+  ],
+  announcements: [
+    { id: 1, title: 'Jornada de Bienestar Empresarial', body: 'Este viernes 25 de abril realizaremos nuestra jornada de bienestar. Habrá actividades deportivas, charlas de salud mental y almuerzo compartido. ¡Los esperamos a todos!', tag: 'Bienestar', date: '2026-04-18', author: 'Ana García' },
+    { id: 2, title: 'Actualización de Política de Trabajo Remoto', body: 'A partir del 1 de mayo se modifica la política de trabajo remoto. Los colaboradores podrán trabajar desde casa hasta 3 días a la semana previa autorización de su líder.', tag: 'Política', date: '2026-04-15', author: 'Ana García' },
+    { id: 3, title: 'Capacitación Obligatoria SST - Abril 2026', body: 'Recordamos que todos los colaboradores deben completar los módulos de SST antes del 30 de abril. El incumplimiento afectará la evaluación de desempeño.', tag: 'Formación', date: '2026-04-10', author: 'Ana García' },
+    { id: 4, title: 'Nuevo sistema de solicitudes en línea', body: 'Ya está disponible el módulo de solicitudes en PULSO. Desde ahora todas las solicitudes de materiales y viajes deben gestionarse por este medio.', tag: 'Sistema', date: '2026-04-05', author: 'Ana García' }
+  ],
+  certificates: [
+    { id: 1, userId: 3, type: 'laboral_salario', status: 'approved', date: '2026-04-10', approvedBy: 'Ana García', approvedDate: '2026-04-11' },
+    { id: 2, userId: 4, type: 'a_quien_interese', status: 'pending', date: '2026-04-18', approvedBy: null, approvedDate: null }
+  ],
+  requests: [
+    { id: 1, userId: 3, type: 'materiales', description: 'Solicito una pantalla adicional para trabajo dual y teclado ergonómico.', status: 'approved', date: '2026-04-08', approvedBy: 'Carlos López', approvedDate: '2026-04-09' },
+    { id: 2, userId: 4, type: 'viaje', destination: 'Medellín', startDate: '2026-05-10', endDate: '2026-05-12', travelers: 2, costOwner: 'Empresa', status: 'pending', date: '2026-04-17', approvedBy: null, approvedDate: null },
+    { id: 3, userId: 3, type: 'materiales', description: 'Silla ergonómica para home office.', status: 'rejected', date: '2026-04-01', approvedBy: 'Carlos López', approvedDate: '2026-04-03', rejectReason: 'Presupuesto agotado para el trimestre.' }
+  ],
+  absences: [
+    { id: 1, userId: 3, type: 'vacaciones', startDate: '2026-05-05', endDate: '2026-05-16', days: 10, status: 'approved', date: '2026-04-10', approvedBy: 'Carlos López' },
+    { id: 2, userId: 4, type: 'dia_naranja', startDate: '2026-04-24', endDate: '2026-04-24', days: 1, status: 'pending', date: '2026-04-20', approvedBy: null },
+    { id: 3, userId: 2, type: 'licencia_luto', startDate: '2026-03-15', endDate: '2026-03-20', days: 5, status: 'approved', date: '2026-03-15', approvedBy: 'Ana García' }
+  ],
+  sst: {
+    modules: [
+      { id: 1, title: 'Inducción SST', desc: 'Conceptos básicos de seguridad y salud en el trabajo. Obligatorio para todos los colaboradores.', icon: '🛡️', color: '#dbeafe', duration: '45 min', tips: ['Siempre reporta incidentes por pequeños que sean', 'Usa el equipo de protección personal asignado', 'Conoce las rutas de evacuación de tu área'] },
+      { id: 2, title: 'Ergonomía y Posturas', desc: 'Aprende a configurar correctamente tu puesto de trabajo y mantener posturas saludables.', icon: '🪑', color: '#dcfce7', duration: '30 min', tips: ['Ajusta tu silla para que los pies lleguen al piso', 'La pantalla debe estar al nivel de los ojos', 'Toma pausas activas cada 90 minutos'] },
+      { id: 3, title: 'Manejo del Estrés', desc: 'Técnicas y herramientas para gestionar el estrés laboral de manera efectiva.', icon: '🧠', color: '#fef9c3', duration: '35 min', tips: ['Practica respiración diafragmática en momentos de tensión', 'Establece límites claros entre trabajo y vida personal', 'Comunica tu carga de trabajo a tu líder oportunamente'] },
+      { id: 4, title: 'Plan de Emergencias', desc: 'Procedimientos de evacuación, puntos de encuentro y protocolos ante emergencias.', icon: '🚨', color: '#fee2e2', duration: '40 min', tips: ['Identifica las salidas de emergencia de tu edificio', 'Participa en los simulacros programados', 'Mantén despejadas las rutas de evacuación'] },
+      { id: 5, title: 'Riesgo Químico', desc: 'Identificación, manejo y almacenamiento seguro de sustancias peligrosas.', icon: '⚗️', color: '#f3e8ff', duration: '50 min', tips: ['Lee siempre la hoja de seguridad antes de manipular un químico', 'Usa guantes y gafas de protección', 'Nunca mezcles productos de limpieza sin autorización'] },
+      { id: 6, title: 'Higiene Industrial', desc: 'Control de factores de riesgo físicos, químicos y biológicos en el ambiente laboral.', icon: '🔬', color: '#d1fae5', duration: '40 min', tips: ['Lávate las manos frecuentemente', 'Mantén tu área de trabajo limpia y ordenada', 'Ventila adecuadamente los espacios de trabajo'] }
+    ]
+  },
+  cyber: {
+    modules: [
+      { id: 1, title: 'Contraseñas Seguras', desc: 'Aprende a crear y gestionar contraseñas robustas para proteger tus cuentas corporativas.', icon: '🔑', color: '#dbeafe', duration: '25 min', tips: ['Usa contraseñas de mínimo 12 caracteres', 'Combina letras, números y símbolos', 'Nunca reutilices contraseñas entre sistemas'] },
+      { id: 2, title: 'Phishing y Fraude', desc: 'Identifica correos y mensajes maliciosos antes de que comprometan tu información.', icon: '🎣', color: '#fef9c3', duration: '30 min', tips: ['Verifica siempre el remitente de correos sospechosos', 'No hagas clic en enlaces de correos inesperados', 'Reporta correos sospechosos al área de TI'] },
+      { id: 3, title: 'Protección de Datos', desc: 'Ley de protección de datos personales y buenas prácticas de manejo de información.', icon: '🔐', color: '#dcfce7', duration: '35 min', tips: ['No compartas información de clientes por canales no autorizados', 'Bloquea tu equipo al ausentarte', 'Clasifica correctamente la información confidencial'] },
+      { id: 4, title: 'Redes y VPN', desc: 'Uso seguro de redes corporativas, WiFi públicas y conexión a VPN.', icon: '🌐', color: '#fee2e2', duration: '30 min', tips: ['Usa VPN siempre que trabajes fuera de la oficina', 'Evita conectarte a redes WiFi públicas sin VPN', 'No conectes dispositivos personales a la red corporativa'] },
+      { id: 5, title: 'Ingeniería Social', desc: 'Técnicas que usan los atacantes para manipular personas y obtener información.', icon: '🎭', color: '#f3e8ff', duration: '40 min', tips: ['Verifica la identidad antes de entregar información', 'No reveles datos corporativos por teléfono sin verificación', 'Desconfía de solicitudes urgentes de información'] }
+    ]
+  },
+  documents: [
+    { id: 1, name: 'RUT Empresarial', type: 'PDF', icon: '📄', color: '#fee2e2', desc: 'Registro Único Tributario vigente 2026' },
+    { id: 2, name: 'Cámara de Comercio', type: 'PDF', icon: '🏛️', color: '#dbeafe', desc: 'Certificado de existencia y representación legal' },
+    { id: 3, name: 'Reglamento Interno', type: 'PDF', icon: '📋', color: '#dcfce7', desc: 'Reglamento interno de trabajo actualizado' },
+    { id: 4, name: 'Política de Privacidad', type: 'PDF', icon: '🔒', color: '#fef9c3', desc: 'Política de tratamiento de datos personales' },
+    { id: 5, name: 'Manual de Convivencia', type: 'PDF', icon: '🤝', color: '#f3e8ff', desc: 'Manual de convivencia y código de ética' },
+    { id: 6, name: 'Organigrama 2026', type: 'PDF', icon: '🗂️', color: '#d1fae5', desc: 'Estructura organizacional actualizada' },
+    { id: 7, name: 'Plan Estratégico', type: 'PDF', icon: '📊', color: '#fce7f3', desc: 'Plan estratégico empresarial 2024-2026' },
+    { id: 8, name: 'Política SST', type: 'PDF', icon: '⚕️', color: '#ffedd5', desc: 'Política de seguridad y salud en el trabajo' }
+  ],
+  pqr: [
+    { id: 1, userId: 3, anonymous: false, type: 'sugerencia', subject: 'Mejora en proceso de solicitudes', body: 'Sería ideal poder rastrear el estado de las solicitudes en tiempo real desde la plataforma.', status: 'en_revision', date: '2026-04-12' },
+    { id: 2, userId: null, anonymous: true, type: 'queja', subject: 'Temperatura en área de trabajo', body: 'El sistema de aire acondicionado en el piso 3 no funciona adecuadamente, afectando la productividad.', status: 'pendiente', date: '2026-04-16' }
+  ]
+};
+
+/* ── Storage helpers ───────────────────────────────────── */
+const DB = {
+  get(key) {
+    try { return JSON.parse(localStorage.getItem('pulso_' + key)); } catch { return null; }
+  },
+  set(key, val) {
+    localStorage.setItem('pulso_' + key, JSON.stringify(val));
+  },
+  init() {
+    if (!DB.get('initialized')) {
+      Object.entries(SEED).forEach(([k, v]) => DB.set(k, v));
+      // Init training progress for all users
+      const progress = {};
+      SEED.users.forEach(u => {
+        progress[u.id] = {
+          sst: SEED.sst.modules.reduce((a, m) => ({ ...a, [m.id]: 0 }), {}),
+          cyber: SEED.cyber.modules.reduce((a, m) => ({ ...a, [m.id]: 0 }), {})
+        };
+      });
+      DB.set('progress', progress);
+      DB.set('initialized', true);
+    }
+  }
+};
+
+/* ── CRUD helpers ──────────────────────────────────────── */
+const Users = {
+  all: () => DB.get('users') || [],
+  find: (id) => Users.all().find(u => u.id === id),
+  byEmail: (email) => Users.all().find(u => u.email === email),
+  update(id, data) {
+    const users = Users.all();
+    const idx = users.findIndex(u => u.id === id);
+    if (idx !== -1) { users[idx] = { ...users[idx], ...data }; DB.set('users', users); }
+  },
+  save(users) { DB.set('users', users); }
+};
+
+const Announcements = {
+  all: () => (DB.get('announcements') || []).sort((a, b) => b.date.localeCompare(a.date)),
+  add(ann) {
+    const list = DB.get('announcements') || [];
+    const newAnn = { ...ann, id: Date.now() };
+    list.unshift(newAnn);
+    DB.set('announcements', list);
+    return newAnn;
+  },
+  del(id) {
+    DB.set('announcements', (DB.get('announcements') || []).filter(a => a.id !== id));
+  }
+};
+
+const Certificates = {
+  all: () => DB.get('certificates') || [],
+  forUser: (uid) => Certificates.all().filter(c => c.userId === uid),
+  add(cert) {
+    const list = Certificates.all();
+    const newC = { ...cert, id: Date.now() };
+    list.push(newC);
+    DB.set('certificates', list);
+    return newC;
+  },
+  update(id, data) {
+    const list = Certificates.all();
+    const idx = list.findIndex(c => c.id === id);
+    if (idx !== -1) { list[idx] = { ...list[idx], ...data }; DB.set('certificates', list); }
+  },
+  pending: () => Certificates.all().filter(c => c.status === 'pending')
+};
+
+const Requests = {
+  all: () => DB.get('requests') || [],
+  forUser: (uid) => Requests.all().filter(r => r.userId === uid),
+  add(req) {
+    const list = Requests.all();
+    const newR = { ...req, id: Date.now() };
+    list.push(newR);
+    DB.set('requests', list);
+    return newR;
+  },
+  update(id, data) {
+    const list = Requests.all();
+    const idx = list.findIndex(r => r.id === id);
+    if (idx !== -1) { list[idx] = { ...list[idx], ...data }; DB.set('requests', list); }
+  },
+  pending: () => Requests.all().filter(r => r.status === 'pending')
+};
+
+const Absences = {
+  all: () => DB.get('absences') || [],
+  forUser: (uid) => Absences.all().filter(a => a.userId === uid),
+  add(abs) {
+    const list = Absences.all();
+    const newA = { ...abs, id: Date.now() };
+    list.push(newA);
+    DB.set('absences', list);
+    return newA;
+  },
+  update(id, data) {
+    const list = Absences.all();
+    const idx = list.findIndex(a => a.id === id);
+    if (idx !== -1) { list[idx] = { ...list[idx], ...data }; DB.set('absences', list); }
+  },
+  pending: () => Absences.all().filter(a => a.status === 'pending'),
+  vacDaysUsed: (uid) => {
+    return Absences.forUser(uid)
+      .filter(a => a.type === 'vacaciones' && a.status === 'approved')
+      .reduce((sum, a) => sum + (a.days || 0), 0);
+  }
+};
+
+const PQR = {
+  all: () => DB.get('pqr') || [],
+  forUser: (uid) => PQR.all().filter(p => !p.anonymous && p.userId === uid),
+  add(item) {
+    const list = PQR.all();
+    const newP = { ...item, id: Date.now() };
+    list.push(newP);
+    DB.set('pqr', list);
+    return newP;
+  },
+  update(id, data) {
+    const list = PQR.all();
+    const idx = list.findIndex(p => p.id === id);
+    if (idx !== -1) { list[idx] = { ...list[idx], ...data }; DB.set('pqr', list); }
+  }
+};
+
+const Progress = {
+  get(uid) { return (DB.get('progress') || {})[uid] || { sst: {}, cyber: {} }; },
+  complete(uid, module, moduleId) {
+    const prog = DB.get('progress') || {};
+    if (!prog[uid]) prog[uid] = { sst: {}, cyber: {} };
+    prog[uid][module][moduleId] = 100;
+    DB.set('progress', prog);
+  },
+  pct(uid, module, modules) {
+    const prog = Progress.get(uid);
+    const done = modules.filter(m => (prog[module] || {})[m.id] === 100).length;
+    return Math.round((done / modules.length) * 100);
+  }
+};
+
+/* ── Session ───────────────────────────────────────────── */
+const Session = {
+  get: () => DB.get('session'),
+  set: (user) => DB.set('session', user),
+  clear: () => localStorage.removeItem('pulso_session')
+};
+
+/* ── Helpers ───────────────────────────────────────────── */
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d + 'T12:00:00');
+  return dt.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function fmtDateShort(d) {
+  if (!d) return '—';
+  const dt = new Date(d + 'T12:00:00');
+  return dt.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
+}
+
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function initials(name) {
+  return (name || '').split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+}
+
+function certTypeName(t) {
+  const map = {
+    laboral_salario: 'Certificado Laboral con Salario',
+    laboral_sin_salario: 'Certificado Laboral sin Salario',
+    a_quien_interese: 'Certificado A Quien Pueda Interesar',
+    cesantias: 'Certificado de Cesantías',
+    retenciones: 'Certificado de Retenciones'
+  };
+  return map[t] || t;
+}
+
+function absTypeName(t) {
+  const map = {
+    vacaciones: 'Vacaciones',
+    dia_naranja: 'Día Naranja',
+    licencia_maternidad: 'Licencia Maternidad',
+    licencia_paternidad: 'Licencia Paternidad',
+    licencia_luto: 'Licencia de Luto',
+    licencia_no_remunerada: 'Licencia No Remunerada'
+  };
+  return map[t] || t;
+}
+
+function pqrTypeName(t) {
+  const map = { peticion: 'Petición', queja: 'Queja', reclamo: 'Reclamo', sugerencia: 'Sugerencia' };
+  return map[t] || t;
+}
+
+function roleLabel(r) {
+  const map = { admin_rrhh: 'Admin RRHH', lider: 'Líder', colaborador: 'Colaborador' };
+  return map[r] || r;
+}
+
+function statusBadge(s) {
+  const map = {
+    pending: '<span class="badge badge-pending">⏳ Pendiente</span>',
+    approved: '<span class="badge badge-approved">✓ Aprobado</span>',
+    rejected: '<span class="badge badge-rejected">✗ Rechazado</span>',
+    en_revision: '<span class="badge badge-info">🔍 En Revisión</span>',
+    pendiente: '<span class="badge badge-pending">⏳ Pendiente</span>'
+  };
+  return map[s] || `<span class="badge badge-gray">${s}</span>`;
+}
+
+function reqTypeName(t) {
+  const map = { materiales: 'Materiales', viaje: 'Viaje' };
+  return map[t] || t;
+}
+
+// Initialize on load
+DB.init();
