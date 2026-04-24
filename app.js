@@ -1441,7 +1441,7 @@ function renderAdmin() {
     <div class="page-subtitle">Gestiona solicitudes, usuarios y comunicaciones internas.</div>
 
     <div class="grid-4 mb-4">
-      <div class="stat-card"><div class="stat-icon stat-icon-yellow">⏳</div><div><div class="stat-num">${totalPend}</div><div class="stat-label">Pendientes hoy</div></div></div>
+      <div class="stat-card"><div class="stat-icon stat-icon-yellow">⏳</div><div><div class="stat-num">${totalPend}</div><div class="stat-label">Pendientes</div></div></div>
       <div class="stat-card"><div class="stat-icon stat-icon-blue">👥</div><div><div class="stat-num">${users.filter(u=>u.active).length}</div><div class="stat-label">Usuarios activos</div></div></div>
       <div class="stat-card"><div class="stat-icon stat-icon-green">📣</div><div><div class="stat-num">${Announcements.all().length}</div><div class="stat-label">Anuncios publicados</div></div></div>
       <div class="stat-card"><div class="stat-icon stat-icon-purple">🎂</div><div><div class="stat-num">${birthdays.length}</div><div class="stat-label">Cumpleaños este mes</div></div></div>
