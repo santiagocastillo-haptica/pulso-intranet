@@ -1476,6 +1476,101 @@ tr:last-child td { border-bottom: none; }
 .cert-upload-box:hover { border-color: var(--primary); background: #fff8f6; color: var(--primary); }
 .cert-upload-icon { font-size: 18px; }
 
+/* ── SIDEBAR NAV BADGE ─────────────────────────────────── */
+.nav-badge {
+  margin-left: auto;
+  background: var(--primary);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  flex-shrink: 0;
+}
+
+/* ── APROBACIONES DASHBOARD ────────────────────────────── */
+.aprov-section {
+  background: white;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.aprov-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+}
+.aprov-header-approve { background: #f0fdf4; color: #15803d; }
+.aprov-header-info    { background: #eff6ff; color: #1d4ed8; }
+.aprov-count {
+  background: rgba(0,0,0,.08);
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+.aprov-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  transition: background .15s;
+}
+.aprov-item:last-child { border-bottom: none; }
+.aprov-item:hover { background: #f8fafc; }
+.aprov-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+  margin-top: 2px;
+}
+.aprov-body  { flex: 1; min-width: 0; }
+.aprov-name  { font-size: 14px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.aprov-detail{ font-size: 12px; color: var(--text-muted); margin-top: 3px; line-height: 1.5; }
+.aprov-doc-badge {
+  display: inline-block;
+  font-size: 11px;
+  color: var(--primary);
+  margin-top: 4px;
+}
+.aprov-cat-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+.aprov-cat-certificado { background: #dbeafe; color: #1e40af; }
+.aprov-cat-solicitud   { background: #fef9c3; color: #92400e; }
+.aprov-cat-ausencia    { background: #dcfce7; color: #15803d; }
+.aprov-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.aprov-date { font-size: 11px; color: var(--text-muted); }
+.aprov-actions { display: flex; gap: 6px; }
+.aprov-empty {
+  padding: 24px 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
 /* ── ANNOUNCEMENTS READ / UNREAD ───────────────────────── */
 .ann-unread {
   border-left: 3px solid var(--primary);

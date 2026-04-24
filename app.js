@@ -119,6 +119,21 @@ function showApp() {
   document.querySelectorAll('.admin-only').forEach(el => {
     el.classList.toggle('hidden', !isAdmin(currentUser.role));
   });
+
+  // Aprobaciones badge
+  if (isAdmin(currentUser.role)) updateAprovBadge();
+}
+
+function updateAprovBadge() {
+  const badge = document.getElementById('aprov-badge');
+  if (!badge) return;
+  const count = getPendingForApproval().length;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
 }
 
 /* ── Sidebar ───────────────────────────────────────────── */
@@ -174,7 +189,7 @@ function navigate(view) {
     solicitudes: 'Solicitudes', solicitudes_materiales: 'Materiales', solicitudes_viaje: 'Viaje',
     ausencias: 'Ausencias', sst: 'SST', ciberseguridad: 'Ciberseguridad',
     pqr: 'PQR', informacion: 'Información Corporativa', perfil: 'Mi Perfil',
-    admin: 'Panel de Administración'
+    aprobaciones: 'Aprobaciones', admin: 'Panel de Administración'
   };
   document.getElementById('breadcrumb').textContent = labels[view] || view;
 
@@ -187,7 +202,8 @@ function navigate(view) {
     solicitudes_materiales: renderSolicitudesMateriales,
     solicitudes_viaje: renderSolicitudesViaje,
     ausencias: renderAusencias, sst: renderSST, ciberseguridad: renderCiberseguridad,
-    pqr: renderPQR, informacion: renderInformacion, perfil: renderPerfil, admin: renderAdmin
+    pqr: renderPQR, informacion: renderInformacion, perfil: renderPerfil,
+    aprobaciones: renderAprobaciones, admin: renderAdmin
   };
 
   if (renderers[view]) content.innerHTML = renderers[view]();
@@ -828,24 +844,9 @@ function submitViaje() {
 ══════════════════════════════════════════════════════════ */
 function renderAusencias() {
   const absences = Absences.forUser(currentUser.id);
-  const vacUsed = Absences.vacDaysUsed(currentUser.id);
-  const vacTotal = 15;
-  const vacLeft = vacTotal - vacUsed;
-
   return `
     <div class="page-title">Ausencias</div>
-    <div class="page-subtitle">Solicita vacaciones, licencias y días especiales.</div>
-
-    <div class="days-available">
-      <div class="days-circle">${vacLeft}</div>
-      <div>
-        <div class="font-semibold">Días de vacaciones disponibles</div>
-        <div class="text-muted text-sm">${vacUsed} usados de ${vacTotal} días anuales</div>
-        <div class="progress-bar-wrap mt-2" style="width:200px">
-          <div class="progress-bar" style="width:${(vacUsed/vacTotal)*100}%"></div>
-        </div>
-      </div>
-    </div>
+    <div class="page-subtitle">Solicita vacaciones, licencias y días especiales. RR.HH. procesará tu solicitud en 1-3 días hábiles.</div>
 
     <div class="grid-2">
       <div class="card">
@@ -853,22 +854,34 @@ function renderAusencias() {
         <div class="card-body">
           <div class="form-group">
             <label>Tipo de ausencia</label>
-            <select id="abs-type" onchange="updateAbsDays()">
+            <select id="abs-type" onchange="onAbsTypeChange()">
               <option value="vacaciones">Vacaciones</option>
-              <option value="dia_naranja">Día Naranja (bienestar)</option>
-              <option value="licencia_maternidad">Licencia de Maternidad</option>
-              <option value="licencia_paternidad">Licencia de Paternidad</option>
-              <option value="licencia_luto">Licencia de Luto</option>
+              <option value="dia_naranja">Día Naranja</option>
               <option value="licencia_no_remunerada">Licencia No Remunerada</option>
+              <option value="otras_licencias">Otras Licencias</option>
+              <option value="incapacidad">Incapacidad</option>
             </select>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>Fecha de inicio</label><input type="date" id="abs-start" onchange="updateAbsDays()"></div>
-            <div class="form-group"><label>Fecha de fin</label><input type="date" id="abs-end" onchange="updateAbsDays()"></div>
+            <div class="form-group"><label>Fecha de inicio <span class="text-danger">*</span></label><input type="date" id="abs-start" onchange="updateAbsDays()"></div>
+            <div class="form-group"><label>Fecha de fin <span class="text-danger">*</span></label><input type="date" id="abs-end" onchange="updateAbsDays()"></div>
           </div>
           <div id="abs-days-preview" class="text-muted text-sm mb-3"></div>
-          <div class="form-group"><label>Observaciones</label><textarea id="abs-obs" placeholder="Información adicional para tu líder..."></textarea></div>
-          <button class="btn btn-primary btn-full" onclick="submitAbs()">Solicitar Ausencia</button>
+
+          <div id="abs-doc-section" class="hidden">
+            <div class="cert-section-divider">Soporte requerido</div>
+            <div class="form-group">
+              <label>Documento de soporte <span class="text-danger">*</span></label>
+              <div class="cert-upload-box" onclick="document.getElementById('abs-doc-input').click()">
+                <span class="cert-upload-icon">📎</span>
+                <span id="abs-doc-label">Adjuntar soporte...</span>
+              </div>
+              <input type="file" id="abs-doc-input" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onchange="onAbsDocAttached(this)">
+            </div>
+          </div>
+
+          <div class="form-group"><label>Observaciones <span class="text-muted">(opcional)</span></label><textarea id="abs-obs" placeholder="Información adicional..."></textarea></div>
+          <button id="btn-solicitar-abs" class="btn btn-primary btn-full" onclick="submitAbs()">Solicitar Ausencia</button>
         </div>
       </div>
 
@@ -891,31 +904,66 @@ function renderAusencias() {
     </div>`;
 }
 
+function onAbsTypeChange() {
+  const type    = document.getElementById('abs-type').value;
+  const needDoc = ['otras_licencias','incapacidad'].includes(type);
+  document.getElementById('abs-doc-section').classList.toggle('hidden', !needDoc);
+  if (!needDoc) {
+    document.getElementById('abs-doc-label').textContent = 'Adjuntar soporte...';
+    document.getElementById('abs-doc-input').value = '';
+  }
+  validateAbsForm();
+}
+
+function onAbsDocAttached(input) {
+  const file = input.files[0];
+  document.getElementById('abs-doc-label').textContent = file ? '✅ ' + file.name : 'Adjuntar soporte...';
+  validateAbsForm();
+}
+
+function validateAbsForm() {
+  const btn     = document.getElementById('btn-solicitar-abs');
+  if (!btn) return;
+  const type    = document.getElementById('abs-type').value;
+  const needDoc = ['otras_licencias','incapacidad'].includes(type);
+  if (needDoc) {
+    const doc = document.getElementById('abs-doc-input');
+    btn.disabled = !(doc && doc.files && doc.files.length > 0);
+  } else {
+    btn.disabled = false;
+  }
+}
+
 function updateAbsDays() {
-  const start = document.getElementById('abs-start').value;
-  const end = document.getElementById('abs-end').value;
+  const start   = document.getElementById('abs-start').value;
+  const end     = document.getElementById('abs-end').value;
   const preview = document.getElementById('abs-days-preview');
   if (start && end) {
     const days = Math.ceil((new Date(end) - new Date(start)) / 86400000) + 1;
-    if (days > 0) preview.textContent = `📅 Duración: ${days} día(s) hábiles`;
-    else preview.textContent = 'La fecha de fin debe ser posterior al inicio.';
+    preview.textContent = days > 0 ? `📅 Duración: ${days} día(s)` : 'La fecha de fin debe ser posterior al inicio.';
   }
 }
 
 function submitAbs() {
-  const type = document.getElementById('abs-type').value;
+  const type  = document.getElementById('abs-type').value;
   const start = document.getElementById('abs-start').value;
-  const end = document.getElementById('abs-end').value;
+  const end   = document.getElementById('abs-end').value;
+  const obs   = document.getElementById('abs-obs').value.trim();
   if (!start || !end) { showToast('Selecciona las fechas de la ausencia', 'error'); return; }
   const days = Math.ceil((new Date(end) - new Date(start)) / 86400000) + 1;
   if (days <= 0) { showToast('Las fechas no son válidas', 'error'); return; }
-  if (type === 'vacaciones' && days > Absences.vacDaysUsed(currentUser.id) + 15 - Absences.vacDaysUsed(currentUser.id)) {
-    if (days > 15 - Absences.vacDaysUsed(currentUser.id)) {
-      showToast('No tienes suficientes días de vacaciones disponibles', 'error'); return;
-    }
+  const needDoc = ['otras_licencias','incapacidad'].includes(type);
+  const docInput = document.getElementById('abs-doc-input');
+  if (needDoc && !(docInput.files && docInput.files.length > 0)) {
+    showToast('Debes adjuntar el soporte para este tipo de ausencia', 'error'); return;
   }
-  Absences.add({ userId: currentUser.id, type, startDate: start, endDate: end, days, status: 'pending', date: today() });
-  showToast('Solicitud de ausencia enviada a tu líder', 'success');
+  Absences.add({
+    userId: currentUser.id, type, startDate: start, endDate: end, days,
+    obs: obs || null,
+    docRespaldo: needDoc && docInput.files[0] ? docInput.files[0].name : null,
+    status: 'pending', date: today()
+  });
+  showToast('Solicitud de ausencia enviada. Será procesada en 1-3 días hábiles.', 'success');
   navigate('ausencias');
 }
 
@@ -1261,6 +1309,114 @@ function saveContact() {
 }
 
 /* ══════════════════════════════════════════════════════════
+   APROBACIONES
+══════════════════════════════════════════════════════════ */
+function renderAprobaciones() {
+  if (!isAdmin(currentUser.role)) return '<div class="empty-state"><p>Sin acceso.</p></div>';
+
+  const toApprove = getPendingForApproval();
+  const toInfo    = getPendingForInfo();
+
+  function itemCard(item, canApprove) {
+    const user   = Users.find(item.userId);
+    const cat    = item.category;
+    const icons  = { certificado: '📄', solicitud: '📋', ausencia: '📅' };
+    const icon   = icons[cat] || '📌';
+
+    let detail = '';
+    if (cat === 'certificado') {
+      detail = certTypeName(item.type)
+        + (item.cesantiasMotivo ? ` · ${cesantiasMotivoName(item.cesantiasMotivo)}` : '')
+        + (item.dirigida        ? ` · ${certDirigidaLabel(item.dirigida, item.dirigidaNombre)}` : '');
+    } else if (cat === 'solicitud') {
+      if (item.type === 'materiales') detail = `Materiales · ${item.items || item.description || ''} (x${item.qty || '?'}) · Recogida: ${item.pickupDate ? fmtDate(item.pickupDate) : '—'}`;
+      else detail = `Viaje · ${item.codigoProyecto || ''} · ${item.destination || ''} · ${fmtDate(item.startDate)} → ${fmtDate(item.endDate)}`;
+    } else if (cat === 'ausencia') {
+      detail = `${absTypeName(item.type)} · ${fmtDateShort(item.startDate)} → ${fmtDateShort(item.endDate)} · ${item.days} día(s)`;
+    }
+
+    const docBadge = item.docRespaldo ? `<span class="aprov-doc-badge">📎 ${item.docRespaldo}</span>` : '';
+
+    return `
+      <div class="aprov-item">
+        <div class="aprov-icon">${icon}</div>
+        <div class="aprov-body">
+          <div class="aprov-name">${user ? user.name : '—'} <span class="aprov-cat-badge aprov-cat-${cat}">${cat}</span></div>
+          <div class="aprov-detail">${detail}</div>
+          ${docBadge}
+        </div>
+        <div class="aprov-meta">
+          <span class="aprov-date">${fmtDate(item.date)}</span>
+          ${canApprove ? `
+            <div class="aprov-actions">
+              <button class="btn btn-success btn-sm" onclick="aprovAction('${cat}',${item.id},'approved')">✓ Aprobar</button>
+              <button class="btn btn-danger btn-sm"  onclick="aprovAction('${cat}',${item.id},'rejected')">✗ Rechazar</button>
+            </div>` : `<span class="badge badge-gray" style="font-size:10px">Informativo</span>`}
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="page-title">Aprobaciones</div>
+    <div class="page-subtitle">Solicitudes pendientes que requieren tu acción o están para tu conocimiento.</div>
+
+    <div class="aprov-section">
+      <div class="aprov-section-header aprov-header-approve">
+        <span>✅ Para tu aprobación</span>
+        <span class="aprov-count">${toApprove.length}</span>
+      </div>
+      ${toApprove.length
+        ? toApprove.sort((a,b) => b.date.localeCompare(a.date)).map(i => itemCard(i, true)).join('')
+        : `<div class="aprov-empty">¡Todo al día! No hay solicitudes pendientes de tu aprobación.</div>`}
+    </div>
+
+    <div class="aprov-section" style="margin-top:24px">
+      <div class="aprov-section-header aprov-header-info">
+        <span>ℹ️ Para tu información</span>
+        <span class="aprov-count">${toInfo.length}</span>
+      </div>
+      ${toInfo.length
+        ? toInfo.sort((a,b) => b.date.localeCompare(a.date)).map(i => itemCard(i, false)).join('')
+        : `<div class="aprov-empty">Sin solicitudes informativas pendientes.</div>`}
+    </div>`;
+}
+
+function aprovAction(cat, id, newStatus) {
+  if (newStatus === 'rejected') {
+    openModal('Motivo de rechazo', `
+      <div class="form-group">
+        <label>Motivo <span class="text-muted">(opcional)</span></label>
+        <textarea id="aprov-reject-reason" placeholder="Explica brevemente el motivo del rechazo..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" onclick="confirmAprovReject('${cat}',${id})">Confirmar rechazo</button>
+        <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      </div>`);
+    return;
+  }
+  const data = { status: 'approved', approvedBy: currentUser.name, approvedDate: today() };
+  applyAprovUpdate(cat, id, data);
+  showToast('Solicitud aprobada ✓', 'success');
+  updateAprovBadge();
+  navigate('aprobaciones');
+}
+
+function confirmAprovReject(cat, id) {
+  const reason = document.getElementById('aprov-reject-reason').value.trim() || 'Sin motivo especificado';
+  applyAprovUpdate(cat, id, { status: 'rejected', approvedBy: currentUser.name, approvedDate: today(), rejectReason: reason });
+  closeModal();
+  showToast('Solicitud rechazada', 'error');
+  updateAprovBadge();
+  navigate('aprobaciones');
+}
+
+function applyAprovUpdate(cat, id, data) {
+  if (cat === 'certificado') Certificates.update(id, data);
+  else if (cat === 'solicitud') Requests.update(id, data);
+  else if (cat === 'ausencia')  Absences.update(id, data);
+}
+
+/* ══════════════════════════════════════════════════════════
    ADMIN
 ══════════════════════════════════════════════════════════ */
 function renderAdmin() {
@@ -1372,16 +1528,63 @@ function renderAdmin() {
     </div>`;
 }
 
-/* Roles que pueden aprobar/ver cada tipo de solicitud */
-function reqApproveRole(type) {
-  if (type === 'materiales') return 'admin_adm';
-  if (type === 'viaje')      return 'admin_gerente';
+/* ── Routing de aprobaciones ───────────────────────────── */
+// Retorna el rol que aprueba un item dado su categoría y tipo
+function getApproveRole(category, type) {
+  if (category === 'certificado') return 'admin_rrhh';
+  if (category === 'solicitud') {
+    if (type === 'materiales') return 'admin_adm';
+    if (type === 'viaje')      return 'admin_gerente';
+  }
+  if (category === 'ausencia') {
+    if (['vacaciones','dia_naranja','licencia_no_remunerada','otras_licencias'].includes(type)) return 'admin_rrhh';
+    if (type === 'incapacidad') return 'admin_adm';
+  }
   return null;
 }
+
+// Retorna los roles que tienen visibilidad informativa
+function getInfoRoles(category, type) {
+  if (category === 'certificado') return [];
+  if (category === 'solicitud') {
+    if (type === 'materiales') return ['admin_gerente','admin_legal'];
+    if (type === 'viaje')      return ['admin_adm','admin_legal'];
+  }
+  if (category === 'ausencia') {
+    if (['vacaciones','dia_naranja','licencia_no_remunerada','otras_licencias'].includes(type)) return ['admin_ops','admin_gerente'];
+    if (type === 'incapacidad') return ['admin_rrhh','admin_gerente'];
+  }
+  return [];
+}
+
+// Compatibilidad con funciones anteriores de solicitudes
+function reqApproveRole(type) { return getApproveRole('solicitud', type); }
 function reqVisibleTo(type) {
-  if (type === 'materiales') return ['admin_adm','admin_gerente','admin_legal'];
-  if (type === 'viaje')      return ['admin_gerente','admin_adm','admin_legal'];
-  return null; // all admins
+  const approveRole = getApproveRole('solicitud', type);
+  const infoRoles   = getInfoRoles('solicitud', type);
+  return approveRole ? [approveRole, ...infoRoles] : infoRoles;
+}
+
+// Todos los items pending que el usuario actual debe aprobar
+function getPendingForApproval() {
+  const role = currentUser.role;
+  const items = [
+    ...Certificates.pending().map(c  => ({ ...c,  category: 'certificado' })),
+    ...Requests.all().filter(r => r.status === 'pending').map(r => ({ ...r, category: 'solicitud' })),
+    ...Absences.all().filter(a => a.status === 'pending').map(a => ({ ...a, category: 'ausencia' }))
+  ];
+  return items.filter(i => getApproveRole(i.category, i.type) === role);
+}
+
+// Todos los items pending que el usuario actual ve como informativo
+function getPendingForInfo() {
+  const role = currentUser.role;
+  const items = [
+    ...Certificates.pending().map(c  => ({ ...c,  category: 'certificado' })),
+    ...Requests.all().filter(r => r.status === 'pending').map(r => ({ ...r, category: 'solicitud' })),
+    ...Absences.all().filter(a => a.status === 'pending').map(a => ({ ...a, category: 'ausencia' }))
+  ];
+  return items.filter(i => getInfoRoles(i.category, i.type).includes(role));
 }
 
 function renderAdminSolicitudes(pendCerts, pendReqs, pendAbs) {

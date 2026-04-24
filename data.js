@@ -302,8 +302,14 @@ function certDirigidaLabel(dirigida, nombre) {
 
 function absTypeName(t) {
   const map = {
-    vacaciones: 'Vacaciones',
-    dia_naranja: 'Día Naranja',
+    vacaciones:             'Vacaciones',
+    dia_naranja:            'Día Naranja',
+    licencia_no_remunerada: 'Licencia No Remunerada',
+    otras_licencias:        'Otras Licencias',
+    incapacidad:            'Incapacidad',
+    // legacy (kept for existing records)
+    licencia_maternidad: 'Licencia de Maternidad',
+    licencia_paternidad: 'Licencia de Paternidad',
     licencia_maternidad: 'Licencia Maternidad',
     licencia_paternidad: 'Licencia Paternidad',
     licencia_luto: 'Licencia de Luto',
