@@ -207,6 +207,26 @@ const Progress = {
   }
 };
 
+/* ── Announcements Read Tracking ───────────────────────── */
+const AnnRead = {
+  _all()       { return DB.get('ann_read') || {}; },
+  _forUser(uid){ return (AnnRead._all()[uid] || []); },
+  markRead(uid, annId) {
+    const data = AnnRead._all();
+    if (!data[uid]) data[uid] = [];
+    if (!data[uid].includes(annId)) {
+      data[uid].push(annId);
+      DB.set('ann_read', data);
+    }
+  },
+  isRead(uid, annId) { return AnnRead._forUser(uid).includes(annId); },
+  unreadCount(uid) {
+    const allIds = Announcements.all().map(a => a.id);
+    const read   = AnnRead._forUser(uid);
+    return allIds.filter(id => !read.includes(id)).length;
+  }
+};
+
 /* ── Session ───────────────────────────────────────────── */
 const Session = {
   get: () => DB.get('session'),

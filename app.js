@@ -5,7 +5,6 @@
 /* ── State ─────────────────────────────────────────────── */
 let currentUser = null;
 let currentView = 'home';
-let calendarState = { absMonth: null, absYear: null, bdMonth: null, bdYear: null };
 
 /* ── Boot ──────────────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', () => {
@@ -42,6 +41,54 @@ function handleLogin(e) {
   Session.set(user);
   showApp();
   navigate('home');
+}
+
+/* ── Google Login ──────────────────────────────────────── */
+// Para activar: reemplaza el CLIENT_ID con el tuyo desde
+// https://console.cloud.google.com → APIs & Services → Credentials
+const GOOGLE_CLIENT_ID = 'TU_CLIENT_ID.apps.googleusercontent.com';
+
+function handleGoogleLoginBtn() {
+  if (GOOGLE_CLIENT_ID.startsWith('TU_')) {
+    const errEl = document.getElementById('login-error');
+    errEl.textContent = 'Google Login aún no está configurado. Usa el formulario de acceso o contacta a RRHH para configurarlo.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!window.google) {
+    showToast('Cargando Google... intenta en un momento', 'error');
+    return;
+  }
+  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential });
+  google.accounts.id.prompt();
+}
+
+function handleGoogleCredential(response) {
+  try {
+    // Decodificar JWT de Google (payload en base64)
+    const payload = JSON.parse(atob(response.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    const email = payload.email;
+    const user  = Users.byEmail(email);
+    const errEl = document.getElementById('login-error');
+
+    if (!user) {
+      errEl.textContent = `La cuenta ${email} no está registrada en PULSO. Contacta a RRHH.`;
+      errEl.classList.remove('hidden');
+      return;
+    }
+    if (!user.active) {
+      errEl.textContent = 'Tu cuenta está desactivada. Contacta a RRHH.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    errEl.classList.add('hidden');
+    currentUser = user;
+    Session.set(user);
+    showApp();
+    navigate('home');
+  } catch(e) {
+    showToast('Error al verificar cuenta de Google', 'error');
+  }
 }
 
 function handleLogout() {
@@ -126,21 +173,22 @@ function navigate(view) {
    HOME
 ══════════════════════════════════════════════════════════ */
 function renderHome() {
-  const u = currentUser;
+  const u   = currentUser;
   const now = new Date();
-  const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-  const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-  const greeting = now.getHours() < 12 ? 'Buenos días' : now.getHours() < 18 ? 'Buenas tardes' : 'Buenas noches';
+  const dayNames   = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const monthNames = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const greeting   = now.getHours() < 12 ? 'Buenos días' : now.getHours() < 18 ? 'Buenas tardes' : 'Buenas noches';
 
-  const anns = Announcements.all().slice(0, 4);
+  const pendingTotal = Certificates.forUser(u.id).filter(c => c.status === 'pending').length
+                     + Requests.forUser(u.id).filter(r => r.status === 'pending').length;
+  const vacDays    = 15 - Absences.vacDaysUsed(u.id);
+  const prog       = Progress.pct(u.id, 'sst', DB.get('sst').modules);
+  const unreadCnt  = AnnRead.unreadCount(u.id);
 
-  const pendingCerts = Certificates.forUser(u.id).filter(c => c.status === 'pending').length;
-  const pendingReqs = Requests.forUser(u.id).filter(r => r.status === 'pending').length;
-  const vacDays = 15 - Absences.vacDaysUsed(u.id);
-  const prog = Progress.pct(u.id, 'sst', DB.get('sst').modules);
-
-  if (!calendarState.absMonth) { calendarState.absMonth = now.getMonth(); calendarState.absYear = now.getFullYear(); }
-  if (!calendarState.bdMonth) { calendarState.bdMonth = now.getMonth(); calendarState.bdYear = now.getFullYear(); }
+  const allAnns    = Announcements.all();
+  const unreadAnns = allAnns.filter(a => !AnnRead.isRead(u.id, a.id));
+  const readAnns   = allAnns.filter(a =>  AnnRead.isRead(u.id, a.id));
+  const displayAnns= [...unreadAnns, ...readAnns].slice(0, 6);
 
   return `
     <div class="welcome-banner">
@@ -150,124 +198,158 @@ function renderHome() {
     </div>
 
     <div class="grid-4 mb-4">
-      <div class="stat-card">
-        <div class="stat-icon stat-icon-yellow">📋</div>
+      <div class="stat-card clickable" onclick="navigate('solicitudes')" title="Ver solicitudes">
+        <div class="stat-icon" style="background:#ffeeed;color:#FB4E4B;font-size:22px;width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">📋</div>
         <div>
-          <div class="stat-num">${pendingCerts + pendingReqs}</div>
+          <div class="stat-num">${pendingTotal}</div>
           <div class="stat-label">Solicitudes pendientes</div>
         </div>
+        <div class="stat-arrow">›</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon stat-icon-green">🌴</div>
+      <div class="stat-card clickable" onclick="navigate('ausencias')" title="Ver ausencias">
+        <div class="stat-icon" style="background:#eef3ff;color:#5295DA;font-size:22px;width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">🌴</div>
         <div>
           <div class="stat-num">${vacDays}</div>
           <div class="stat-label">Días de vacaciones</div>
         </div>
+        <div class="stat-arrow">›</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon stat-icon-blue">🛡️</div>
+      <div class="stat-card clickable" onclick="navigate('sst')" title="Ver SST">
+        <div class="stat-icon" style="background:#edfaf5;color:#6BBFA3;font-size:22px;width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">🛡️</div>
         <div>
           <div class="stat-num">${prog}%</div>
           <div class="stat-label">Progreso SST</div>
         </div>
+        <div class="stat-arrow">›</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon stat-icon-purple">📣</div>
+      <div class="stat-card clickable" onclick="scrollToAnuncios()" title="Ver anuncios">
+        <div class="stat-icon" style="background:#fffbee;color:#c9960c;font-size:22px;width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">📣</div>
         <div>
-          <div class="stat-num">${anns.length}</div>
-          <div class="stat-label">Anuncios recientes</div>
+          <div class="stat-num">${unreadCnt}</div>
+          <div class="stat-label">Anuncios sin leer</div>
         </div>
+        <div class="stat-arrow">›</div>
       </div>
     </div>
 
     <div class="grid-2 mb-4">
-      <div class="calendar-widget" id="abs-calendar">
-        ${renderCalendar('abs', calendarState.absMonth, calendarState.absYear, 'Ausencias y Vacaciones')}
+      <div class="banner-card">
+        <div class="banner-card-header">
+          <span class="banner-card-icon">✈️</span>
+          <h3>Ausencias próximas</h3>
+          <span class="banner-card-sub">Próximos 30 días</span>
+        </div>
+        <div class="banner-list">${renderAbsBanner()}</div>
       </div>
-      <div class="calendar-widget" id="bd-calendar">
-        ${renderCalendar('bd', calendarState.bdMonth, calendarState.bdYear, 'Cumpleaños')}
+      <div class="banner-card">
+        <div class="banner-card-header">
+          <span class="banner-card-icon">🎂</span>
+          <h3>Cumpleaños del mes</h3>
+          <span class="banner-card-sub">${monthNames[now.getMonth()]} ${now.getFullYear()}</span>
+        </div>
+        <div class="banner-list">${renderBdBanner()}</div>
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="anuncios-section">
       <div class="card-header">
-        <h2>📣 Anuncios Recientes</h2>
+        <h2>📣 Anuncios sin leer${unreadCnt > 0 ? ` <span class="ann-unread-badge">${unreadCnt}</span>` : ''}</h2>
         ${currentUser.role === 'admin_rrhh' ? '<button class="btn btn-primary btn-sm" onclick="showNewAnnModal()">+ Nuevo Anuncio</button>' : ''}
       </div>
       <div class="card-body">
-        ${anns.length ? anns.map(a => `
-          <div class="announcement-item">
-            <div class="ann-meta">
-              <span class="ann-tag">${a.tag}</span>
-              <span class="ann-date">${fmtDate(a.date)}</span>
-              ${currentUser.role === 'admin_rrhh' ? `<button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="deleteAnn(${a.id})">✕</button>` : ''}
-            </div>
-            <div class="ann-title">${a.title}</div>
-            <div class="ann-body">${a.body}</div>
-          </div>`).join('') : '<div class="empty-state"><div class="empty-state-icon">📭</div><p>No hay anuncios aún.</p></div>'}
+        ${displayAnns.length ? displayAnns.map(a => {
+          const isRead = AnnRead.isRead(u.id, a.id);
+          return `
+            <div class="announcement-item ${isRead ? 'ann-read' : 'ann-unread'}">
+              <div class="ann-meta">
+                <span class="ann-tag">${a.tag}</span>
+                <span class="ann-date">${fmtDate(a.date)}</span>
+                ${!isRead ? '<span class="ann-new-badge">Nuevo</span>' : ''}
+                ${currentUser.role === 'admin_rrhh' ? `<button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="deleteAnn(${a.id})">✕</button>` : ''}
+              </div>
+              <div class="ann-title">${a.title}</div>
+              <div class="ann-body">${a.body}</div>
+              ${!isRead ? `<button class="btn btn-outline btn-sm ann-read-btn" onclick="markAnnRead(${a.id})">✓ Marcar como leído</button>` : ''}
+            </div>`;
+        }).join('') : '<div class="empty-state"><div class="empty-state-icon">📭</div><p>No hay anuncios aún.</p></div>'}
       </div>
     </div>`;
 }
 
-function renderCalendar(type, month, year, title) {
-  const now = new Date();
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+function renderAbsBanner() {
+  const now   = new Date();
+  const in30  = new Date(now); in30.setDate(in30.getDate() + 30);
+  const mths  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-  let events = {};
-  if (type === 'abs') {
-    Absences.all().filter(a => a.status !== 'rejected').forEach(a => {
-      let d = new Date(a.startDate + 'T12:00:00');
-      const end = new Date(a.endDate + 'T12:00:00');
-      while (d <= end) {
-        if (d.getMonth() === month && d.getFullYear() === year)
-          events[d.getDate()] = (events[d.getDate()] || []).concat(a);
-        d.setDate(d.getDate() + 1);
-      }
-    });
-  } else {
-    Users.all().forEach(u => {
-      if (u.birthday) {
-        const bd = new Date(u.birthday + 'T12:00:00');
-        if (bd.getMonth() === month) events[bd.getDate()] = (events[bd.getDate()] || []).concat({ name: u.name });
-      }
-    });
-  }
+  const upcoming = Absences.all()
+    .filter(a => a.status !== 'rejected')
+    .filter(a => { const s = new Date(a.startDate + 'T12:00:00'); return s >= now && s <= in30; })
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
 
-  let cells = '';
-  for (let i = 0; i < firstDay; i++) cells += '<div class="cal-day other-month"></div>';
-  for (let d = 1; d <= daysInMonth; d++) {
-    const isToday = d === now.getDate() && month === now.getMonth() && year === now.getFullYear();
-    const hasEv = events[d];
-    const cls = isToday ? 'today' : hasEv ? (type === 'abs' ? 'has-event' : 'has-birthday') : '';
-    const tooltip = hasEv ? `title="${hasEv.map(e => e.name || absTypeName(e.type)).join(', ')}"` : '';
-    cells += `<div class="cal-day ${cls}" ${tooltip}>${d}${hasEv && !isToday ? '<div class="cal-dot"></div>' : ''}</div>`;
-  }
+  if (!upcoming.length)
+    return `<div class="banner-empty"><span>✈️</span><p>Sin ausencias en los próximos 30 días</p></div>`;
 
-  return `
-    <div class="calendar-header">
-      <button class="cal-nav" onclick="calNav('${type}','prev')">&#8249;</button>
-      <h3>${title} — ${monthNames[month]} ${year}</h3>
-      <button class="cal-nav" onclick="calNav('${type}','next')">&#8250;</button>
-    </div>
-    <div class="calendar-grid">
-      <div class="cal-day-headers">
-        ${['Do','Lu','Ma','Mi','Ju','Vi','Sa'].map(d => `<div class="cal-day-header">${d}</div>`).join('')}
-      </div>
-      <div class="cal-days">${cells}</div>
-    </div>`;
+  return upcoming.slice(0, 5).map(a => {
+    const user  = Users.find(a.userId);
+    const start = new Date(a.startDate + 'T12:00:00');
+    return `
+      <div class="banner-item">
+        <div class="banner-date-box">
+          <span class="banner-day">${start.getDate()}</span>
+          <span class="banner-month">${mths[start.getMonth()]}</span>
+        </div>
+        <div class="banner-info">
+          <div class="banner-name">${user ? user.name.split(' ').slice(0,2).join(' ') : '—'}</div>
+          <div class="banner-type">${absTypeName(a.type)} · ${a.days} día${a.days !== 1 ? 's' : ''}</div>
+        </div>
+        <span class="banner-status-pill ${a.status}">${a.status === 'approved' ? '✓ Aprobado' : '⏳ Pendiente'}</span>
+      </div>`;
+  }).join('');
 }
 
-function calNav(type, dir) {
-  const key = type === 'abs' ? 'absMonth' : 'bdMonth';
-  const yearKey = type === 'abs' ? 'absYear' : 'bdYear';
-  calendarState[key] += dir === 'next' ? 1 : -1;
-  if (calendarState[key] > 11) { calendarState[key] = 0; calendarState[yearKey]++; }
-  if (calendarState[key] < 0) { calendarState[key] = 11; calendarState[yearKey]--; }
-  const calId = type === 'abs' ? 'abs-calendar' : 'bd-calendar';
-  const title = type === 'abs' ? 'Ausencias y Vacaciones' : 'Cumpleaños';
-  document.getElementById(calId).innerHTML = renderCalendar(type, calendarState[key], calendarState[yearKey], title);
+function renderBdBanner() {
+  const now   = new Date();
+  const month = now.getMonth();
+  const today = now.getDate();
+
+  const bdays = Users.all()
+    .filter(u => { if (!u.birthday) return false; return new Date(u.birthday + 'T12:00:00').getMonth() === month; })
+    .sort((a, b) => new Date(a.birthday).getDate() - new Date(b.birthday).getDate());
+
+  if (!bdays.length)
+    return `<div class="banner-empty"><span>🎂</span><p>Sin cumpleaños este mes</p></div>`;
+
+  return bdays.map(u => {
+    const bd      = new Date(u.birthday + 'T12:00:00');
+    const day     = bd.getDate();
+    const isToday = day === today;
+    return `
+      <div class="banner-item ${isToday ? 'banner-today' : ''}">
+        <div class="banner-avatar-sm">${initials(u.name)}</div>
+        <div class="banner-info">
+          <div class="banner-name">${u.name.split(' ').slice(0,2).join(' ')}${isToday ? ' 🎉' : ''}</div>
+          <div class="banner-type">${u.cargo}</div>
+        </div>
+        <div class="banner-date-right">
+          <span class="banner-day-num">${day}</span>
+          ${isToday ? '<span class="banner-today-label">¡Hoy!</span>' : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function markAnnRead(annId) {
+  AnnRead.markRead(currentUser.id, annId);
+  showToast('Anuncio marcado como leído ✓', 'success');
+  navigate('home');
+}
+
+function scrollToAnuncios() {
+  if (currentView !== 'home') { navigate('home'); }
+  setTimeout(() => {
+    const el = document.getElementById('anuncios-section');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 120);
 }
 
 function showNewAnnModal() {
