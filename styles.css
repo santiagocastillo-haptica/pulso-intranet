@@ -388,6 +388,41 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
   border-left-color: var(--primary);
 }
 
+/* Submenu / nav parent */
+.nav-parent {
+  cursor: pointer;
+  user-select: none;
+}
+.nav-chevron {
+  margin-left: auto;
+  font-size: 16px;
+  color: rgba(255,255,255,.4);
+  transition: transform .2s;
+  flex-shrink: 0;
+}
+.nav-subnav {
+  background: rgba(0,0,0,.12);
+}
+.nav-child {
+  padding-left: 46px !important;
+  font-size: 13px;
+  border-left-color: transparent;
+}
+.nav-child.active {
+  background: rgba(250,70,22,.15);
+  border-left-color: var(--primary);
+}
+.sidebar.collapsed .nav-chevron,
+.sidebar.collapsed .nav-subnav { display: none; }
+
+/* Viaje hotel row */
+.viaje-hotel-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.viaje-hotel-row .radio-option { flex: 1; min-width: 120px; }
+
 .nav-icon {
   font-size: 17px;
   width: 22px;

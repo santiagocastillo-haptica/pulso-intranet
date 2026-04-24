@@ -135,6 +135,28 @@ function toggleSidebar() {
   }
 }
 
+/* ── Sidebar submenu ───────────────────────────────────── */
+function toggleNavParent(key) {
+  const sub     = document.getElementById('nav-sub-' + key);
+  const chevron = document.getElementById('nav-chevron-' + key);
+  if (!sub) return;
+  const isOpen = !sub.classList.contains('hidden');
+  sub.classList.toggle('hidden', isOpen);
+  if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(90deg)';
+  // mark parent active when open
+  const parent = document.getElementById('nav-parent-' + key);
+  if (parent) parent.classList.toggle('active', !isOpen);
+}
+
+function openNavParent(key) {
+  const sub     = document.getElementById('nav-sub-' + key);
+  const chevron = document.getElementById('nav-chevron-' + key);
+  const parent  = document.getElementById('nav-parent-' + key);
+  if (sub)     { sub.classList.remove('hidden'); }
+  if (chevron) { chevron.style.transform = 'rotate(90deg)'; }
+  if (parent)  { parent.classList.add('active'); }
+}
+
 /* ── Router ────────────────────────────────────────────── */
 function navigate(view) {
   if (view === 'admin' && !isAdmin(currentUser.role)) return;
@@ -144,8 +166,12 @@ function navigate(view) {
     el.classList.toggle('active', el.dataset.view === view);
   });
 
+  // Auto-expand parent submenus when a child is active
+  if (view.startsWith('solicitudes')) openNavParent('solicitudes');
+
   const labels = {
-    home: 'Inicio', certificados: 'Certificados', solicitudes: 'Solicitudes',
+    home: 'Inicio', certificados: 'Certificados',
+    solicitudes: 'Solicitudes', solicitudes_materiales: 'Materiales', solicitudes_viaje: 'Viaje',
     ausencias: 'Ausencias', sst: 'SST', ciberseguridad: 'Ciberseguridad',
     pqr: 'PQR', informacion: 'Información Corporativa', perfil: 'Mi Perfil',
     admin: 'Panel de Administración'
@@ -156,7 +182,10 @@ function navigate(view) {
   content.innerHTML = '';
 
   const renderers = {
-    home: renderHome, certificados: renderCertificados, solicitudes: renderSolicitudes,
+    home: renderHome, certificados: renderCertificados,
+    solicitudes: () => { navigate('solicitudes_materiales'); return ''; },
+    solicitudes_materiales: renderSolicitudesMateriales,
+    solicitudes_viaje: renderSolicitudesViaje,
     ausencias: renderAusencias, sst: renderSST, ciberseguridad: renderCiberseguridad,
     pqr: renderPQR, informacion: renderInformacion, perfil: renderPerfil, admin: renderAdmin
   };
@@ -604,95 +633,194 @@ Documento generado por PULSO Intranet`;
 }
 
 /* ══════════════════════════════════════════════════════════
-   SOLICITUDES
+   SOLICITUDES — MATERIALES
 ══════════════════════════════════════════════════════════ */
-function renderSolicitudes() {
-  const reqs = Requests.forUser(currentUser.id);
+function renderSolicitudesMateriales() {
+  const reqs = Requests.forUser(currentUser.id).filter(r => r.type === 'materiales');
   return `
-    <div class="page-title">Solicitudes</div>
-    <div class="page-subtitle">Gestiona tus solicitudes de materiales y viajes corporativos.</div>
-
-    <div class="tabs">
-      <div class="tab active" onclick="switchTab('sol','nueva',this)">Nueva Solicitud</div>
-      <div class="tab" onclick="switchTab('sol','historial',this)">Historial</div>
-    </div>
-
-    <div id="sol-tab-nueva">
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-header"><h2>📦 Solicitud de Materiales</h2></div>
-          <div class="card-body">
-            <div class="form-group">
-              <label>Descripción de materiales</label>
-              <textarea id="mat-desc" placeholder="Describe los materiales que necesitas, cantidades, especificaciones..."></textarea>
-            </div>
-            <div class="form-group">
-              <label>Justificación</label>
-              <textarea id="mat-just" placeholder="¿Por qué necesitas estos materiales?"></textarea>
-            </div>
-            <button class="btn btn-primary btn-full" onclick="submitMat()">Enviar Solicitud</button>
+    <div class="page-title">Solicitud de Materiales</div>
+    <div class="page-subtitle">Solicita materiales de oficina o equipos. El área Administrativa los gestionará en 1-3 días hábiles.</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><h2>Nueva Solicitud</h2></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Materiales a solicitar <span class="text-danger">*</span></label>
+            <textarea id="mat-items" placeholder="Ej: Resma de papel, esferos, marcadores..."></textarea>
           </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><h2>✈️ Solicitud de Viaje</h2></div>
-          <div class="card-body">
-            <div class="form-group"><label>Destino</label><input type="text" id="viaje-dest" placeholder="Ciudad / País de destino"></div>
-            <div class="form-row">
-              <div class="form-group"><label>Fecha de salida</label><input type="date" id="viaje-start"></div>
-              <div class="form-group"><label>Fecha de regreso</label><input type="date" id="viaje-end"></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label>N° viajeros</label><input type="number" id="viaje-n" value="1" min="1"></div>
-              <div class="form-group"><label>¿Quién asume los costos?</label>
-                <select id="viaje-costs">
-                  <option>Empresa</option><option>Proyecto</option><option>Cliente</option><option>Colaborador</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group"><label>Objetivo del viaje</label><textarea id="viaje-obj" placeholder="Describe el propósito del viaje..."></textarea></div>
-            <button class="btn btn-primary btn-full" onclick="submitViaje()">Enviar Solicitud</button>
+          <div class="form-group">
+            <label>Cantidad <span class="text-danger">*</span></label>
+            <input type="number" id="mat-qty" placeholder="Ej: 5" min="1">
           </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Fecha de recogida en oficina <span class="text-danger">*</span></label>
+              <input type="date" id="mat-pickup">
+            </div>
+            <div class="form-group">
+              <label>Fecha de regreso a oficina</label>
+              <input type="date" id="mat-return">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="submitMat()">Enviar Solicitud</button>
         </div>
       </div>
-    </div>
-
-    <div id="sol-tab-historial" class="hidden">
       <div class="card">
-        <div class="card-header"><h2>Historial de Solicitudes</h2></div>
+        <div class="card-header"><h2>Mis Solicitudes</h2></div>
         <div class="card-body" style="padding:0">
-          ${reqs.length ? `<div class="table-wrap"><table>
-            <thead><tr><th>Tipo</th><th>Descripción</th><th>Fecha</th><th>Estado</th><th>Comentario</th></tr></thead>
+          ${reqs.length ? `<table>
+            <thead><tr><th>Material</th><th>Cant.</th><th>Recogida</th><th>Estado</th></tr></thead>
             <tbody>
               ${reqs.map(r => `<tr>
-                <td>${statusBadge(r.type === 'materiales' ? 'info' : 'info').replace('En Revisión','') || ''}<span class="badge badge-gray">${reqTypeName(r.type)}</span></td>
-                <td>${r.description || r.destination || '—'}</td>
-                <td>${fmtDate(r.date)}</td>
+                <td>${r.items || r.description || '—'}</td>
+                <td>${r.qty || '—'}</td>
+                <td>${r.pickupDate ? fmtDate(r.pickupDate) : '—'}</td>
                 <td>${statusBadge(r.status)}</td>
-                <td class="text-muted text-sm">${r.rejectReason || (r.approvedBy ? 'Aprobado por ' + r.approvedBy : '—')}</td>
               </tr>`).join('')}
             </tbody>
-          </table></div>` : `<div class="empty-state"><div class="empty-state-icon">📋</div><p>No tienes solicitudes aún.</p></div>`}
+          </table>` : `<div class="empty-state"><div class="empty-state-icon">📦</div><p>No tienes solicitudes de materiales aún.</p></div>`}
         </div>
       </div>
     </div>`;
 }
 
 function submitMat() {
-  const desc = document.getElementById('mat-desc').value.trim();
-  if (!desc) { showToast('Describe los materiales necesarios', 'error'); return; }
-  Requests.add({ userId: currentUser.id, type: 'materiales', description: desc, status: 'pending', date: today() });
-  showToast('Solicitud de materiales enviada', 'success');
-  navigate('solicitudes');
+  const items  = document.getElementById('mat-items').value.trim();
+  const qty    = document.getElementById('mat-qty').value;
+  const pickup = document.getElementById('mat-pickup').value;
+  if (!items || !qty || !pickup) { showToast('Completa los campos obligatorios', 'error'); return; }
+  Requests.add({
+    userId: currentUser.id, type: 'materiales',
+    items, qty: parseInt(qty),
+    pickupDate:  pickup,
+    returnDate:  document.getElementById('mat-return').value || null,
+    description: items,
+    status: 'pending', date: today()
+  });
+  showToast('Solicitud de materiales enviada. El área Administrativa la revisará.', 'success');
+  navigate('solicitudes_materiales');
+}
+
+/* ══════════════════════════════════════════════════════════
+   SOLICITUDES — VIAJE
+══════════════════════════════════════════════════════════ */
+const HORARIOS = ['06:00 – 08:00','08:00 – 10:00','10:00 – 12:00','12:00 – 14:00','14:00 – 16:00','16:00 – 18:00','18:00 – 20:00','20:00 – 22:00'];
+const horariosOpts = HORARIOS.map(h => `<option>${h}</option>`).join('');
+
+function renderSolicitudesViaje() {
+  const reqs = Requests.forUser(currentUser.id).filter(r => r.type === 'viaje');
+  return `
+    <div class="page-title">Solicitud de Viaje</div>
+    <div class="page-subtitle">Solicita desplazamientos corporativos. La Gerencia los aprobará en un plazo de 1-3 días hábiles.</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><h2>Nueva Solicitud</h2></div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Código de proyecto <span class="text-danger">*</span></label>
+              <input type="text" id="viaje-cod" placeholder="Ej: HAP-2026-001">
+            </div>
+            <div class="form-group">
+              <label>Destino <span class="text-danger">*</span></label>
+              <input type="text" id="viaje-dest" placeholder="Ciudad / País">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Fecha de salida <span class="text-danger">*</span></label>
+              <input type="date" id="viaje-start">
+            </div>
+            <div class="form-group">
+              <label>Horario deseado de salida</label>
+              <select id="viaje-h-start"><option value="">Sin preferencia</option>${horariosOpts}</select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Fecha de regreso <span class="text-danger">*</span></label>
+              <input type="date" id="viaje-end">
+            </div>
+            <div class="form-group">
+              <label>Horario deseado de regreso</label>
+              <select id="viaje-h-end"><option value="">Sin preferencia</option>${horariosOpts}</select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Requerimiento de hotel</label>
+            <div class="viaje-hotel-row">
+              <label class="radio-option"><input type="radio" name="viaje-hotel" value="no" checked onchange="onHotelChange()"> No requiere</label>
+              <label class="radio-option"><input type="radio" name="viaje-hotel" value="si" onchange="onHotelChange()"> Sí requiere</label>
+            </div>
+          </div>
+          <div id="viaje-zona-wrap" class="form-group hidden">
+            <label>Zona de preferencia</label>
+            <input type="text" id="viaje-zona" placeholder="Ej: Norte de la ciudad, centro histórico...">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>N° de viajeros <span class="text-danger">*</span></label>
+              <input type="number" id="viaje-n" value="1" min="1">
+            </div>
+            <div class="form-group">
+              <label>¿Quién asume los costos?</label>
+              <select id="viaje-costs">
+                <option value="haptica">Háptica</option>
+                <option value="cliente">Cliente</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="submitViaje()">Enviar Solicitud</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>Mis Solicitudes</h2></div>
+        <div class="card-body" style="padding:0">
+          ${reqs.length ? `<table>
+            <thead><tr><th>Proyecto</th><th>Destino</th><th>Salida</th><th>Estado</th></tr></thead>
+            <tbody>
+              ${reqs.map(r => `<tr>
+                <td>${r.codigoProyecto || '—'}</td>
+                <td>${r.destination || '—'}</td>
+                <td>${r.startDate ? fmtDate(r.startDate) : '—'}</td>
+                <td>${statusBadge(r.status)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>` : `<div class="empty-state"><div class="empty-state-icon">✈️</div><p>No tienes solicitudes de viaje aún.</p></div>`}
+        </div>
+      </div>
+    </div>`;
+}
+
+function onHotelChange() {
+  const hotelSi = document.querySelector('input[name="viaje-hotel"]:checked')?.value === 'si';
+  document.getElementById('viaje-zona-wrap').classList.toggle('hidden', !hotelSi);
 }
 
 function submitViaje() {
-  const dest = document.getElementById('viaje-dest').value.trim();
+  const cod   = document.getElementById('viaje-cod').value.trim();
+  const dest  = document.getElementById('viaje-dest').value.trim();
   const start = document.getElementById('viaje-start').value;
-  const end = document.getElementById('viaje-end').value;
-  if (!dest || !start || !end) { showToast('Completa todos los campos del viaje', 'error'); return; }
-  Requests.add({ userId: currentUser.id, type: 'viaje', destination: dest, startDate: start, endDate: end, travelers: document.getElementById('viaje-n').value, costOwner: document.getElementById('viaje-costs').value, status: 'pending', date: today() });
-  showToast('Solicitud de viaje enviada correctamente', 'success');
-  navigate('solicitudes');
+  const end   = document.getElementById('viaje-end').value;
+  const n     = document.getElementById('viaje-n').value;
+  if (!cod || !dest || !start || !end || !n) { showToast('Completa todos los campos obligatorios', 'error'); return; }
+  const hotelVal = document.querySelector('input[name="viaje-hotel"]:checked')?.value || 'no';
+  Requests.add({
+    userId: currentUser.id, type: 'viaje',
+    codigoProyecto: cod,
+    destination:    dest,
+    startDate:      start,
+    horarioSalida:  document.getElementById('viaje-h-start').value || null,
+    endDate:        end,
+    horarioRegreso: document.getElementById('viaje-h-end').value || null,
+    hotel:          hotelVal === 'si',
+    zonaHotel:      hotelVal === 'si' ? (document.getElementById('viaje-zona').value.trim() || null) : null,
+    travelers:      parseInt(n),
+    costOwner:      document.getElementById('viaje-costs').value,
+    status: 'pending', date: today()
+  });
+  showToast('Solicitud de viaje enviada. La Gerencia la revisará.', 'success');
+  navigate('solicitudes_viaje');
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1244,13 +1372,31 @@ function renderAdmin() {
     </div>`;
 }
 
+/* Roles que pueden aprobar/ver cada tipo de solicitud */
+function reqApproveRole(type) {
+  if (type === 'materiales') return 'admin_adm';
+  if (type === 'viaje')      return 'admin_gerente';
+  return null;
+}
+function reqVisibleTo(type) {
+  if (type === 'materiales') return ['admin_adm','admin_gerente','admin_legal'];
+  if (type === 'viaje')      return ['admin_gerente','admin_adm','admin_legal'];
+  return null; // all admins
+}
+
 function renderAdminSolicitudes(pendCerts, pendReqs, pendAbs) {
+  // Filter requests: each admin only sees their assigned types
+  const visibleReqs = pendReqs.filter(r => {
+    const roles = reqVisibleTo(r.type);
+    return !roles || roles.includes(currentUser.role);
+  });
+
   const allPending = [
     ...pendCerts.map(c => ({
       ...c, category: 'certificado',
       label: certTypeName(c.type) + (c.cesantiasMotivo ? ' — ' + cesantiasMotivoName(c.cesantiasMotivo) : '') + (c.dirigida ? ' — ' + certDirigidaLabel(c.dirigida, c.dirigidaNombre) : '')
     })),
-    ...pendReqs.map(r => ({ ...r, category: 'solicitud', label: reqTypeName(r.type) + ': ' + (r.description || r.destination || '') })),
+    ...visibleReqs.map(r => ({ ...r, category: 'solicitud', label: reqTypeName(r.type) + ': ' + (r.items || r.destination || r.description || '') })),
     ...pendAbs.map(a => ({ ...a, category: 'ausencia', label: absTypeName(a.type) }))
   ].sort((a, b) => b.date.localeCompare(a.date));
 
@@ -1278,8 +1424,14 @@ function renderAdminSolicitudes(pendCerts, pendReqs, pendAbs) {
               <td>${fmtDate(item.date)}</td>
               <td class="td-actions">
                 ${isCes ? `<button class="btn btn-outline btn-sm" onclick="viewCertDetail(${item.id})">Ver detalle</button>` : ''}
-                <button class="btn btn-success btn-sm" onclick="adminApprove('${item.category}',${item.id})">✓ Aprobar</button>
-                <button class="btn btn-danger btn-sm" onclick="adminReject('${item.category}',${item.id})">✗ Rechazar</button>
+                ${item.category === 'solicitud' ? `<button class="btn btn-outline btn-sm" onclick="viewReqDetail(${item.id})">Ver detalle</button>` : ''}
+                ${canAdminApproveItem(item) ? `
+                  <button class="btn btn-success btn-sm" onclick="adminApprove('${item.category}',${item.id})">✓ Aprobar</button>
+                  <button class="btn btn-danger btn-sm" onclick="adminReject('${item.category}',${item.id})">✗ Rechazar</button>
+                ` : (item.category === 'solicitud' ? `<span class="badge badge-gray" style="font-size:10px">Solo visibilidad</span>` : `
+                  <button class="btn btn-success btn-sm" onclick="adminApprove('${item.category}',${item.id})">✓ Aprobar</button>
+                  <button class="btn btn-danger btn-sm" onclick="adminReject('${item.category}',${item.id})">✗ Rechazar</button>
+                `)}
               </td>
             </tr>`;
           }).join('')}
@@ -1304,6 +1456,43 @@ function viewCertDetail(id) {
     <div class="modal-footer" style="margin-top:16px">
       <button class="btn btn-success" onclick="adminApprove('certificado',${c.id});closeModal()">✓ Aprobar</button>
       <button class="btn btn-danger"  onclick="adminReject('certificado',${c.id})">✗ Rechazar</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cerrar</button>
+    </div>`);
+}
+
+function canAdminApproveItem(item) {
+  if (item.category === 'solicitud') return currentUser.role === reqApproveRole(item.type);
+  if (item.category === 'certificado') return currentUser.role === 'admin_rrhh';
+  if (item.category === 'ausencia')    return currentUser.role === 'admin_rrhh' || currentUser.role === 'admin_ops';
+  return isAdmin(currentUser.role);
+}
+
+function viewReqDetail(id) {
+  const r    = Requests.all().find(x => x.id === id);
+  const user = Users.find(r.userId);
+  if (!r || !user) return;
+  const canApprove = currentUser.role === reqApproveRole(r.type);
+  const body = r.type === 'materiales' ? `
+    <div class="profile-field"><span class="profile-field-label">Colaborador</span><span>${user.name}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Materiales</span><span>${r.items || r.description || '—'}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Cantidad</span><span>${r.qty || '—'}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Fecha de recogida</span><span>${r.pickupDate ? fmtDate(r.pickupDate) : '—'}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Fecha de regreso</span><span>${r.returnDate ? fmtDate(r.returnDate) : '—'}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Solicitado</span><span>${fmtDate(r.date)}</span></div>` : `
+    <div class="profile-field"><span class="profile-field-label">Colaborador</span><span>${user.name}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Código proyecto</span><span>${r.codigoProyecto || '—'}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Destino</span><span>${r.destination || '—'}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Salida</span><span>${fmtDate(r.startDate)}${r.horarioSalida ? ' · ' + r.horarioSalida : ''}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Regreso</span><span>${fmtDate(r.endDate)}${r.horarioRegreso ? ' · ' + r.horarioRegreso : ''}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Hotel</span><span>${r.hotel ? 'Sí' + (r.zonaHotel ? ' — ' + r.zonaHotel : '') : 'No'}</span></div>
+    <div class="profile-field"><span class="profile-field-label">N° viajeros</span><span>${r.travelers || '—'}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Costos</span><span>${r.costOwner === 'haptica' ? 'Háptica' : 'Cliente'}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Solicitado</span><span>${fmtDate(r.date)}</span></div>`;
+  openModal(`Detalle — Solicitud de ${reqTypeName(r.type)}`, body + `
+    <div class="modal-footer" style="margin-top:16px">
+      ${canApprove ? `
+        <button class="btn btn-success" onclick="adminApprove('solicitud',${r.id});closeModal()">✓ Aprobar</button>
+        <button class="btn btn-danger" onclick="adminReject('solicitud',${r.id})">✗ Rechazar</button>` : ''}
       <button class="btn btn-outline" onclick="closeModal()">Cerrar</button>
     </div>`);
 }
