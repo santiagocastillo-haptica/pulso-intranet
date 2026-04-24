@@ -46,7 +46,7 @@ function handleLogin(e) {
 /* ── Google Login ──────────────────────────────────────── */
 // Para activar: reemplaza el CLIENT_ID con el tuyo desde
 // https://console.cloud.google.com → APIs & Services → Credentials
-const GOOGLE_CLIENT_ID = 'TU_CLIENT_ID.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '662265278503-r92mephgvmenns558n0ecbg303vrmib5.apps.googleusercontent.com';
 
 function handleGoogleLoginBtn() {
   if (GOOGLE_CLIENT_ID.startsWith('TU_')) {
@@ -59,7 +59,11 @@ function handleGoogleLoginBtn() {
     showToast('Cargando Google... intenta en un momento', 'error');
     return;
   }
-  google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential });
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback:  handleGoogleCredential,
+    hd:        'haptica.co'
+  });
   google.accounts.id.prompt();
 }
 
