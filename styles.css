@@ -121,17 +121,15 @@ a { text-decoration: none; color: inherit; cursor: pointer; }
 }
 
 .logo-pulse {
-  width: 64px; height: 64px;
-  background: var(--primary);
+  width: 72px; height: 72px;
+  background: white;
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px;
-  font-size: 28px;
-  font-weight: 800;
-  color: white;
-  box-shadow: 0 8px 24px rgba(250,70,22,.35);
+  margin: 0 auto 14px;
+  box-shadow: 0 6px 20px rgba(250,70,22,.22);
+  border: 1.5px solid rgba(250,70,22,.15);
 }
 
 .login-logo h1 {
