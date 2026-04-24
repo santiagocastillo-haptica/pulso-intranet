@@ -274,13 +274,30 @@ function initials(name) {
 
 function certTypeName(t) {
   const map = {
-    laboral_salario: 'Certificado Laboral con Salario',
+    laboral_salario:     'Certificado Laboral con Salario',
     laboral_sin_salario: 'Certificado Laboral sin Salario',
-    a_quien_interese: 'Certificado A Quien Pueda Interesar',
-    cesantias: 'Certificado de Cesantías',
-    retenciones: 'Certificado de Retenciones'
+    cesantias:           'Certificado de Cesantías',
+    retenciones:         'Certificado de Retenciones',
+    a_quien_interese:    'Certificado A Quien Pueda Interesar' // legacy
   };
   return map[t] || t;
+}
+
+function cesantiasMotivoName(m) {
+  const map = {
+    compra_vivienda:  'Compra de vivienda',
+    mejora_vivienda:  'Mejora de vivienda',
+    credito_vivienda: 'Crédito de vivienda',
+    impuesto_predial: 'Impuesto predial',
+    educacion:        'Educación'
+  };
+  return map[m] || m;
+}
+
+function certDirigidaLabel(dirigida, nombre) {
+  const titles = { senor: 'Señor', senora: 'Señora', senores: 'Señores' };
+  const title = titles[dirigida] || '';
+  return nombre ? `${title} ${nombre}` : title;
 }
 
 function absTypeName(t) {

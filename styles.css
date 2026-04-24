@@ -1384,6 +1384,63 @@ tr:last-child td { border-bottom: none; }
 }
 .banner-empty span { font-size: 30px; display: block; margin-bottom: 8px; opacity: .4; }
 
+/* ── CERTIFICADOS FORM ─────────────────────────────────── */
+.cert-dirigida-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.cert-dirigida-row select { flex: 0 0 auto; }
+.cert-dirigida-row input  { flex: 1; }
+
+.cert-section-divider {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  margin: 14px 0 12px;
+}
+
+.cert-motivo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: background .15s, border-color .15s;
+}
+.radio-option:hover { background: #f8fafc; border-color: var(--primary-light); }
+.radio-option input[type="radio"] { accent-color: var(--primary); width: 15px; height: 15px; flex-shrink: 0; }
+.radio-option input[type="radio"]:checked + * { font-weight: 600; color: var(--primary); }
+.radio-option:has(input:checked) { background: #fff4f0; border-color: var(--primary); }
+
+.cert-upload-box {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: border-color .2s, background .2s;
+}
+.cert-upload-box:hover { border-color: var(--primary); background: #fff8f6; color: var(--primary); }
+.cert-upload-icon { font-size: 18px; }
+
 /* ── ANNOUNCEMENTS READ / UNREAD ───────────────────────── */
 .ann-unread {
   border-left: 3px solid var(--primary);

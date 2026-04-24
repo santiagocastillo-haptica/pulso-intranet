@@ -400,28 +400,66 @@ function renderCertificados() {
   const certs = Certificates.forUser(currentUser.id);
   return `
     <div class="page-title">Certificados</div>
-    <div class="page-subtitle">Solicita certificados laborales y de nómina. El área de RRHH los aprobará en un plazo de 1-3 días hábiles.</div>
+    <div class="page-subtitle">Solicita certificados laborales y de nómina. El área de RR.HH. los procesará en un plazo de 1-3 días hábiles.</div>
     <div class="grid-2">
       <div class="card">
         <div class="card-header"><h2>Nueva Solicitud</h2></div>
         <div class="card-body">
+
           <div class="form-group">
             <label>Tipo de Certificado</label>
-            <select id="cert-type">
+            <select id="cert-type" onchange="onCertTypeChange()">
               <option value="laboral_salario">Certificado Laboral con Salario</option>
               <option value="laboral_sin_salario">Certificado Laboral sin Salario</option>
-              <option value="a_quien_interese">A Quien Pueda Interesar</option>
               <option value="cesantias">Certificado de Cesantías</option>
               <option value="retenciones">Certificado de Retenciones</option>
             </select>
           </div>
+
+          <div class="form-group">
+            <label>A quién va dirigida la referencia</label>
+            <div class="cert-dirigida-row">
+              <select id="cert-dirigida" onchange="onDirigidaChange()">
+                <option value="">A quién va dirigida la referencia</option>
+                <option value="senor">Señor</option>
+                <option value="senora">Señora</option>
+                <option value="senores">Señores</option>
+              </select>
+              <input type="text" id="cert-dirigida-nombre" class="hidden" placeholder="Nombre del destinatario">
+            </div>
+          </div>
+
+          <div id="cert-cesantias-section" class="hidden">
+            <div class="cert-section-divider">Información de Cesantías</div>
+            <div class="form-group">
+              <label>Motivo de retiro <span class="text-danger">*</span></label>
+              <div class="cert-motivo-list">
+                <label class="radio-option"><input type="radio" name="ces_motivo" value="compra_vivienda" onchange="validateCertForm()"> Compra de vivienda</label>
+                <label class="radio-option"><input type="radio" name="ces_motivo" value="mejora_vivienda" onchange="validateCertForm()"> Mejora de vivienda</label>
+                <label class="radio-option"><input type="radio" name="ces_motivo" value="credito_vivienda" onchange="validateCertForm()"> Crédito de vivienda</label>
+                <label class="radio-option"><input type="radio" name="ces_motivo" value="impuesto_predial" onchange="validateCertForm()"> Impuesto predial</label>
+                <label class="radio-option"><input type="radio" name="ces_motivo" value="educacion" onchange="validateCertForm()"> Educación</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Documento de respaldo <span class="text-danger">*</span></label>
+              <div class="cert-upload-box" onclick="document.getElementById('cert-doc-input').click()">
+                <span class="cert-upload-icon">📎</span>
+                <span id="cert-doc-label">Adjuntar documento de soporte...</span>
+              </div>
+              <input type="file" id="cert-doc-input" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onchange="onDocAttached(this)">
+            </div>
+          </div>
+
           <div class="form-group">
             <label>Observaciones <span class="text-muted">(opcional)</span></label>
             <textarea id="cert-obs" placeholder="Agrega cualquier observación o indicación especial..."></textarea>
           </div>
-          <button class="btn btn-primary btn-full" onclick="submitCert()">Solicitar Certificado</button>
+
+          <button id="btn-solicitar-cert" class="btn btn-primary btn-full" onclick="submitCert()">Solicitar Certificado</button>
         </div>
       </div>
+
       <div class="card">
         <div class="card-header"><h2>Mis Certificados</h2></div>
         <div class="card-body" style="padding:0">
@@ -429,7 +467,11 @@ function renderCertificados() {
             <thead><tr><th>Tipo</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
             <tbody>
               ${certs.map(c => `<tr>
-                <td>${certTypeName(c.type)}</td>
+                <td>
+                  <div style="font-size:13px;font-weight:600">${certTypeName(c.type)}</div>
+                  ${c.dirigida ? `<div style="font-size:11px;color:var(--text-muted)">${certDirigidaLabel(c.dirigida, c.dirigidaNombre)}</div>` : ''}
+                  ${c.cesantiasMotivo ? `<div style="font-size:11px;color:var(--text-muted)">${cesantiasMotivoName(c.cesantiasMotivo)}</div>` : ''}
+                </td>
                 <td>${fmtDate(c.date)}</td>
                 <td>${statusBadge(c.status)}</td>
                 <td>${c.status === 'approved' ? `<button class="btn btn-outline btn-sm" onclick="downloadCert(${c.id})">⬇ Descargar</button>` : ''}</td>
@@ -441,10 +483,77 @@ function renderCertificados() {
     </div>`;
 }
 
-function submitCert() {
+function onCertTypeChange() {
   const type = document.getElementById('cert-type').value;
-  Certificates.add({ userId: currentUser.id, type, status: 'pending', date: today(), approvedBy: null, approvedDate: null });
-  showToast('Certificado solicitado. RRHH lo procesará en 1-3 días hábiles.', 'success');
+  const sec  = document.getElementById('cert-cesantias-section');
+  if (type === 'cesantias') {
+    sec.classList.remove('hidden');
+  } else {
+    sec.classList.add('hidden');
+    document.querySelectorAll('input[name="ces_motivo"]').forEach(r => r.checked = false);
+    document.getElementById('cert-doc-label').textContent = 'Adjuntar documento de soporte...';
+    document.getElementById('cert-doc-input').value = '';
+  }
+  validateCertForm();
+}
+
+function onDirigidaChange() {
+  const val       = document.getElementById('cert-dirigida').value;
+  const nameInput = document.getElementById('cert-dirigida-nombre');
+  if (val) {
+    nameInput.classList.remove('hidden');
+  } else {
+    nameInput.classList.add('hidden');
+    nameInput.value = '';
+  }
+}
+
+function onDocAttached(input) {
+  const file = input.files[0];
+  document.getElementById('cert-doc-label').textContent = file ? '✅ ' + file.name : 'Adjuntar documento de soporte...';
+  validateCertForm();
+}
+
+function validateCertForm() {
+  const type = document.getElementById('cert-type').value;
+  const btn  = document.getElementById('btn-solicitar-cert');
+  if (!btn) return;
+  if (type === 'cesantias') {
+    const motivo   = document.querySelector('input[name="ces_motivo"]:checked');
+    const docInput = document.getElementById('cert-doc-input');
+    btn.disabled   = !(motivo && docInput.files && docInput.files.length > 0);
+  } else {
+    btn.disabled = false;
+  }
+}
+
+function submitCert() {
+  const type         = document.getElementById('cert-type').value;
+  const dirigida     = document.getElementById('cert-dirigida').value;
+  const dirigidaNom  = document.getElementById('cert-dirigida-nombre').value.trim();
+  const obs          = document.getElementById('cert-obs').value.trim();
+
+  const certData = {
+    userId:        currentUser.id,
+    type,
+    status:        'pending',
+    date:          today(),
+    approvedBy:    null,
+    approvedDate:  null,
+    dirigida:      dirigida || null,
+    dirigidaNombre: (dirigida && dirigidaNom) ? dirigidaNom : null,
+    obs:           obs || null
+  };
+
+  if (type === 'cesantias') {
+    const motivo   = document.querySelector('input[name="ces_motivo"]:checked');
+    const docInput = document.getElementById('cert-doc-input');
+    certData.cesantiasMotivo = motivo ? motivo.value : null;
+    certData.docRespaldo     = (docInput.files && docInput.files[0]) ? docInput.files[0].name : null;
+  }
+
+  Certificates.add(certData);
+  showToast('Certificado solicitado. RR.HH. lo procesará en 1-3 días hábiles.', 'success');
   navigate('certificados');
 }
 
@@ -1137,7 +1246,10 @@ function renderAdmin() {
 
 function renderAdminSolicitudes(pendCerts, pendReqs, pendAbs) {
   const allPending = [
-    ...pendCerts.map(c => ({ ...c, category: 'certificado', label: certTypeName(c.type) })),
+    ...pendCerts.map(c => ({
+      ...c, category: 'certificado',
+      label: certTypeName(c.type) + (c.cesantiasMotivo ? ' — ' + cesantiasMotivoName(c.cesantiasMotivo) : '') + (c.dirigida ? ' — ' + certDirigidaLabel(c.dirigida, c.dirigidaNombre) : '')
+    })),
     ...pendReqs.map(r => ({ ...r, category: 'solicitud', label: reqTypeName(r.type) + ': ' + (r.description || r.destination || '') })),
     ...pendAbs.map(a => ({ ...a, category: 'ausencia', label: absTypeName(a.type) }))
   ].sort((a, b) => b.date.localeCompare(a.date));
@@ -1152,12 +1264,20 @@ function renderAdminSolicitudes(pendCerts, pendReqs, pendAbs) {
         <tbody>
           ${allPending.map(item => {
             const user = Users.find(item.userId);
+            const isCes = item.category === 'certificado' && item.type === 'cesantias';
             return `<tr>
-              <td><span class="badge badge-pending">${item.category}</span></td>
+              <td>
+                <span class="badge badge-pending">${item.category}</span>
+                ${isCes ? '<span class="badge badge-info" style="margin-top:3px;display:block">Cesantías</span>' : ''}
+              </td>
               <td>${user ? user.name : '—'}</td>
-              <td>${item.label.substring(0, 50)}</td>
+              <td>
+                <div style="font-size:13px">${item.label.substring(0, 60)}</div>
+                ${isCes && item.docRespaldo ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">📎 ${item.docRespaldo}</div>` : ''}
+              </td>
               <td>${fmtDate(item.date)}</td>
               <td class="td-actions">
+                ${isCes ? `<button class="btn btn-outline btn-sm" onclick="viewCertDetail(${item.id})">Ver detalle</button>` : ''}
                 <button class="btn btn-success btn-sm" onclick="adminApprove('${item.category}',${item.id})">✓ Aprobar</button>
                 <button class="btn btn-danger btn-sm" onclick="adminReject('${item.category}',${item.id})">✗ Rechazar</button>
               </td>
@@ -1167,6 +1287,25 @@ function renderAdminSolicitudes(pendCerts, pendReqs, pendAbs) {
       </table>
     </div>
   </div>`;
+}
+
+function viewCertDetail(id) {
+  const c    = Certificates.all().find(x => x.id === id);
+  const user = Users.find(c.userId);
+  if (!c || !user) return;
+  openModal('Detalle — Certificado de Cesantías', `
+    <div class="profile-field"><span class="profile-field-label">Colaborador</span><span>${user.name}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Cargo</span><span>${user.cargo}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Fecha solicitud</span><span>${fmtDate(c.date)}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Motivo de retiro</span><span>${cesantiasMotivoName(c.cesantiasMotivo)}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Documento adjunto</span><span>${c.docRespaldo ? '📎 ' + c.docRespaldo : '—'}</span></div>
+    ${c.dirigida ? `<div class="profile-field"><span class="profile-field-label">Dirigida a</span><span>${certDirigidaLabel(c.dirigida, c.dirigidaNombre)}</span></div>` : ''}
+    ${c.obs ? `<div class="form-group mt-3"><label>Observaciones</label><div style="background:#f8fafc;padding:12px;border-radius:6px;font-size:13px;border:1px solid var(--border)">${c.obs}</div></div>` : ''}
+    <div class="modal-footer" style="margin-top:16px">
+      <button class="btn btn-success" onclick="adminApprove('certificado',${c.id});closeModal()">✓ Aprobar</button>
+      <button class="btn btn-danger"  onclick="adminReject('certificado',${c.id})">✗ Rechazar</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cerrar</button>
+    </div>`);
 }
 
 function adminApprove(cat, id) {
