@@ -292,11 +292,19 @@ function renderAbsBanner() {
   return upcoming.slice(0, 5).map(a => {
     const user  = Users.find(a.userId);
     const start = new Date(a.startDate + 'T12:00:00');
+    const end   = new Date(start); end.setDate(end.getDate() + a.days - 1);
     return `
       <div class="banner-item">
-        <div class="banner-date-box">
-          <span class="banner-day">${start.getDate()}</span>
-          <span class="banner-month">${mths[start.getMonth()]}</span>
+        <div class="banner-date-range">
+          <div class="banner-date-box">
+            <span class="banner-day">${start.getDate()}</span>
+            <span class="banner-month">${mths[start.getMonth()]}</span>
+          </div>
+          <span class="banner-range-arrow">→</span>
+          <div class="banner-date-box">
+            <span class="banner-day">${end.getDate()}</span>
+            <span class="banner-month">${mths[end.getMonth()]}</span>
+          </div>
         </div>
         <div class="banner-info">
           <div class="banner-name">${user ? user.name.split(' ').slice(0,2).join(' ') : '—'}</div>
@@ -311,6 +319,7 @@ function renderBdBanner() {
   const now   = new Date();
   const month = now.getMonth();
   const today = now.getDate();
+  const mths  = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
   const bdays = Users.all()
     .filter(u => { if (!u.birthday) return false; return new Date(u.birthday + 'T12:00:00').getMonth() === month; })
@@ -325,15 +334,15 @@ function renderBdBanner() {
     const isToday = day === today;
     return `
       <div class="banner-item ${isToday ? 'banner-today' : ''}">
-        <div class="banner-avatar-sm">${initials(u.name)}</div>
+        <div class="banner-date-box ${isToday ? 'banner-date-box--today' : ''}">
+          <span class="banner-day">${day}</span>
+          <span class="banner-month">${mths[month]}</span>
+        </div>
         <div class="banner-info">
           <div class="banner-name">${u.name.split(' ').slice(0,2).join(' ')}${isToday ? ' 🎉' : ''}</div>
           <div class="banner-type">${u.cargo}</div>
         </div>
-        <div class="banner-date-right">
-          <span class="banner-day-num">${day}</span>
-          ${isToday ? '<span class="banner-today-label">¡Hoy!</span>' : ''}
-        </div>
+        ${isToday ? '<span class="banner-status-pill approved">¡Hoy!</span>' : ''}
       </div>`;
   }).join('');
 }
