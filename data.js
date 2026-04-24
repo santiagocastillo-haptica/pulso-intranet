@@ -2,32 +2,49 @@
    PULSO - Data Layer & localStorage Management
    ═══════════════════════════════════════════════════════ */
 
+const SEED_VERSION = 2;
+
 const SEED = {
   users: [
-    { id: 1, name: 'Ana García', email: 'ana@empresa.com', password: 'admin123', role: 'admin_rrhh', cargo: 'Gerente de RRHH', area: 'Recursos Humanos', ingreso: '2020-01-15', phone: '+57 300 123 4567', active: true, birthday: '1988-04-15' },
-    { id: 2, name: 'Carlos López', email: 'carlos@empresa.com', password: 'lider123', role: 'lider', cargo: 'Jefe de Proyectos', area: 'Tecnología', ingreso: '2019-06-01', phone: '+57 311 234 5678', active: true, birthday: '1985-07-22' },
-    { id: 3, name: 'María Rodríguez', email: 'maria@empresa.com', password: 'colab123', role: 'colaborador', cargo: 'Desarrolladora Senior', area: 'Tecnología', ingreso: '2022-03-10', phone: '+57 320 345 6789', active: true, birthday: '1993-04-21' },
-    { id: 4, name: 'Juan Martínez', email: 'juan@empresa.com', password: 'colab123', role: 'colaborador', cargo: 'Analista Financiero', area: 'Finanzas', ingreso: '2021-08-20', phone: '+57 315 456 7890', active: true, birthday: '1990-11-03' }
+    { id:  1, name: 'Angélica Flechas',          email: 'angelica@haptica.co',           password: 'Haptica123', role: 'colaborador',   cargo: 'Gerente General',                      area: 'Gerencia',                ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id:  2, name: 'Santiago Castillo',          email: 'santiago.castillo@haptica.co',  password: 'Haptica123', role: 'admin_gerente', cargo: 'Gerente Ejecutivo',                    area: 'Gerencia',                ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id:  3, name: 'María Camila Venegas',       email: 'mariacamila@haptica.co',        password: 'Haptica123', role: 'admin_ops',     cargo: 'Directora de Operaciones',             area: 'Operaciones',             ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id:  4, name: 'Daniel Pinilla',             email: 'daniel@haptica.co',             password: 'Haptica123', role: 'colaborador',   cargo: 'Director de Proyecto y Estrategia',    area: 'Proyecto y Estrategia',   ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id:  5, name: 'María Alejandra Corrales',   email: 'mariaalejandra@haptica.co',     password: 'Haptica123', role: 'colaborador',   cargo: 'Director de Proyecto y Estrategia',    area: 'Proyecto y Estrategia',   ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id:  6, name: 'Camilo Niño',               email: 'camilo.nino@haptica.co',        password: 'Haptica123', role: 'colaborador',   cargo: 'Líder de Proyecto y Estrategia',       area: 'Proyecto y Estrategia',   ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id:  7, name: 'Azul Cardona',              email: 'azul.cardona@haptica.co',       password: 'Haptica123', role: 'colaborador',   cargo: 'Director de Estrategia e Innovación',  area: 'Estrategia e Innovación', ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id:  8, name: 'Stiben Ibarra',             email: 'stiben.ibarra@haptica.co',      password: 'Haptica123', role: 'colaborador',   cargo: 'Líder de Proyecto y Estrategia',       area: 'Proyecto y Estrategia',   ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id:  9, name: 'María Alejandra Mariño',    email: 'maria.marino@haptica.co',       password: 'Haptica123', role: 'colaborador',   cargo: 'Líder de Proyecto y Estrategia',       area: 'Proyecto y Estrategia',   ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id: 10, name: 'Ana Roa',                   email: 'ana.roa@haptica.co',            password: 'Haptica123', role: 'colaborador',   cargo: 'Líder de Proyecto y Estrategia',       area: 'Proyecto y Estrategia',   ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id: 11, name: 'María Fernanda Martínez',   email: 'maria.martinez@haptica.co',     password: 'Haptica123', role: 'colaborador',   cargo: 'Líder de Proyecto y Estrategia',       area: 'Proyecto y Estrategia',   ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id: 12, name: 'Jhojann Rodríguez',         email: 'jhojann.rodriguez@haptica.co',  password: 'Haptica123', role: 'colaborador',   cargo: 'Diseñador Visual de Proyectos',        area: 'Diseño',                  ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id: 13, name: 'Kevin Barbosa',             email: 'kevin.barbosa@haptica.co',      password: 'Haptica123', role: 'colaborador',   cargo: 'Diseñador Visual de Proyectos',        area: 'Diseño',                  ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id: 14, name: 'Julián Gaitán',             email: 'julian.gaitan@haptica.co',      password: 'Haptica123', role: 'colaborador',   cargo: 'Consultor de Proyecto y Estrategia',   area: 'Proyecto y Estrategia',   ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id: 15, name: 'Geovanny Sánchez',          email: 'contabilidad@haptica.co',       password: 'Haptica123', role: 'colaborador',   cargo: 'Contador',                             area: 'Administrativa',          ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id: 16, name: 'Svetlana Kahuazango',       email: 'maka@haptica.co',               password: 'Haptica123', role: 'admin_legal',   cargo: 'Directora Legal y Administrativa',     area: 'Legal y Administrativa',  ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id: 17, name: 'Ana María Jiménez',         email: 'anamaria@haptica.co',           password: 'Haptica123', role: 'admin_rrhh',    cargo: 'Directora de RR.HH.',                 area: 'Recursos Humanos',        ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id: 18, name: 'Nicholle Torres',           email: 'nicholle.torres@haptica.co',    password: 'Haptica123', role: 'colaborador',   cargo: 'Consultora de Desarrollo de Negocio',  area: 'Desarrollo de Negocio',   ingreso: '2020-01-01', phone: '', active: true, birthday: null },
+    { id: 19, name: 'Juliana López',             email: 'juliana.lopez@haptica.co',      password: 'Haptica123', role: 'admin_adm',     cargo: 'Coordinadora Administrativa',          area: 'Administrativa',          ingreso: '2020-01-01', phone: '', active: true, birthday: null }
   ],
   announcements: [
-    { id: 1, title: 'Jornada de Bienestar Empresarial', body: 'Este viernes 25 de abril realizaremos nuestra jornada de bienestar. Habrá actividades deportivas, charlas de salud mental y almuerzo compartido. ¡Los esperamos a todos!', tag: 'Bienestar', date: '2026-04-18', author: 'Ana García' },
-    { id: 2, title: 'Actualización de Política de Trabajo Remoto', body: 'A partir del 1 de mayo se modifica la política de trabajo remoto. Los colaboradores podrán trabajar desde casa hasta 3 días a la semana previa autorización de su líder.', tag: 'Política', date: '2026-04-15', author: 'Ana García' },
-    { id: 3, title: 'Capacitación Obligatoria SST - Abril 2026', body: 'Recordamos que todos los colaboradores deben completar los módulos de SST antes del 30 de abril. El incumplimiento afectará la evaluación de desempeño.', tag: 'Formación', date: '2026-04-10', author: 'Ana García' },
-    { id: 4, title: 'Nuevo sistema de solicitudes en línea', body: 'Ya está disponible el módulo de solicitudes en PULSO. Desde ahora todas las solicitudes de materiales y viajes deben gestionarse por este medio.', tag: 'Sistema', date: '2026-04-05', author: 'Ana García' }
+    { id: 1, title: 'Jornada de Bienestar Empresarial', body: 'Este viernes 25 de abril realizaremos nuestra jornada de bienestar. Habrá actividades deportivas, charlas de salud mental y almuerzo compartido. ¡Los esperamos a todos!', tag: 'Bienestar', date: '2026-04-18', author: 'Ana María Jiménez' },
+    { id: 2, title: 'Actualización de Política de Trabajo Remoto', body: 'A partir del 1 de mayo se modifica la política de trabajo remoto. Los colaboradores podrán trabajar desde casa hasta 3 días a la semana previa autorización de su líder.', tag: 'Política', date: '2026-04-15', author: 'Ana María Jiménez' },
+    { id: 3, title: 'Capacitación Obligatoria SST - Abril 2026', body: 'Recordamos que todos los colaboradores deben completar los módulos de SST antes del 30 de abril. El incumplimiento afectará la evaluación de desempeño.', tag: 'Formación', date: '2026-04-10', author: 'Ana María Jiménez' },
+    { id: 4, title: 'Nuevo sistema de solicitudes en línea', body: 'Ya está disponible el módulo de solicitudes en PULSO. Desde ahora todas las solicitudes de materiales y viajes deben gestionarse por este medio.', tag: 'Sistema', date: '2026-04-05', author: 'Ana María Jiménez' }
   ],
   certificates: [
-    { id: 1, userId: 3, type: 'laboral_salario', status: 'approved', date: '2026-04-10', approvedBy: 'Ana García', approvedDate: '2026-04-11' },
-    { id: 2, userId: 4, type: 'a_quien_interese', status: 'pending', date: '2026-04-18', approvedBy: null, approvedDate: null }
+    { id: 1, userId: 10, type: 'laboral_salario',    status: 'approved', date: '2026-04-10', approvedBy: 'Ana María Jiménez', approvedDate: '2026-04-11' },
+    { id: 2, userId:  4, type: 'a_quien_interese',   status: 'pending',  date: '2026-04-18', approvedBy: null, approvedDate: null }
   ],
   requests: [
-    { id: 1, userId: 3, type: 'materiales', description: 'Solicito una pantalla adicional para trabajo dual y teclado ergonómico.', status: 'approved', date: '2026-04-08', approvedBy: 'Carlos López', approvedDate: '2026-04-09' },
-    { id: 2, userId: 4, type: 'viaje', destination: 'Medellín', startDate: '2026-05-10', endDate: '2026-05-12', travelers: 2, costOwner: 'Empresa', status: 'pending', date: '2026-04-17', approvedBy: null, approvedDate: null },
-    { id: 3, userId: 3, type: 'materiales', description: 'Silla ergonómica para home office.', status: 'rejected', date: '2026-04-01', approvedBy: 'Carlos López', approvedDate: '2026-04-03', rejectReason: 'Presupuesto agotado para el trimestre.' }
+    { id: 1, userId:  5, type: 'materiales', description: 'Solicito una pantalla adicional para trabajo dual y teclado ergonómico.', status: 'approved', date: '2026-04-08', approvedBy: 'María Camila Venegas', approvedDate: '2026-04-09' },
+    { id: 2, userId:  4, type: 'viaje', destination: 'Medellín', startDate: '2026-05-10', endDate: '2026-05-12', travelers: 2, costOwner: 'Empresa', status: 'pending', date: '2026-04-17', approvedBy: null, approvedDate: null },
+    { id: 3, userId: 12, type: 'materiales', description: 'Silla ergonómica para home office.', status: 'rejected', date: '2026-04-01', approvedBy: 'María Camila Venegas', approvedDate: '2026-04-03', rejectReason: 'Presupuesto agotado para el trimestre.' }
   ],
   absences: [
-    { id: 1, userId: 3, type: 'vacaciones', startDate: '2026-05-05', endDate: '2026-05-16', days: 10, status: 'approved', date: '2026-04-10', approvedBy: 'Carlos López' },
-    { id: 2, userId: 4, type: 'dia_naranja', startDate: '2026-04-24', endDate: '2026-04-24', days: 1, status: 'pending', date: '2026-04-20', approvedBy: null },
-    { id: 3, userId: 2, type: 'licencia_luto', startDate: '2026-03-15', endDate: '2026-03-20', days: 5, status: 'approved', date: '2026-03-15', approvedBy: 'Ana García' }
+    { id: 1, userId: 10, type: 'vacaciones',    startDate: '2026-05-05', endDate: '2026-05-16', days: 10, status: 'approved', date: '2026-04-10', approvedBy: 'María Camila Venegas' },
+    { id: 2, userId:  4, type: 'dia_naranja',   startDate: '2026-04-28', endDate: '2026-04-28', days:  1, status: 'pending',  date: '2026-04-20', approvedBy: null },
+    { id: 3, userId: 14, type: 'licencia_luto', startDate: '2026-03-15', endDate: '2026-03-20', days:  5, status: 'approved', date: '2026-03-15', approvedBy: 'Ana María Jiménez' }
   ],
   sst: {
     modules: [
@@ -73,7 +90,7 @@ const DB = {
     localStorage.setItem('pulso_' + key, JSON.stringify(val));
   },
   init() {
-    if (!DB.get('initialized')) {
+    if (!DB.get('initialized') || DB.get('seed_version') !== SEED_VERSION) {
       Object.entries(SEED).forEach(([k, v]) => DB.set(k, v));
       // Init training progress for all users
       const progress = {};
@@ -84,7 +101,9 @@ const DB = {
         };
       });
       DB.set('progress', progress);
+      DB.set('ann_read', {});
       DB.set('initialized', true);
+      DB.set('seed_version', SEED_VERSION);
     }
   }
 };
@@ -282,8 +301,19 @@ function pqrTypeName(t) {
 }
 
 function roleLabel(r) {
-  const map = { admin_rrhh: 'Admin RRHH', lider: 'Líder', colaborador: 'Colaborador' };
+  const map = {
+    admin_rrhh:    'Admin RR.HH.',
+    admin_gerente: 'Admin Gerencia',
+    admin_ops:     'Admin Operaciones',
+    admin_legal:   'Admin Legal',
+    admin_adm:     'Admin Administrativa',
+    colaborador:   'Colaborador'
+  };
   return map[r] || r;
+}
+
+function isAdmin(role) {
+  return typeof role === 'string' && role.startsWith('admin_');
 }
 
 function statusBadge(s) {

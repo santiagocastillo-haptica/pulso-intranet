@@ -117,7 +117,7 @@ function showApp() {
 
   // Admin menu items
   document.querySelectorAll('.admin-only').forEach(el => {
-    el.classList.toggle('hidden', currentUser.role !== 'admin_rrhh');
+    el.classList.toggle('hidden', !isAdmin(currentUser.role));
   });
 }
 
@@ -137,7 +137,7 @@ function toggleSidebar() {
 
 /* ── Router ────────────────────────────────────────────── */
 function navigate(view) {
-  if (view === 'admin' && currentUser.role !== 'admin_rrhh') return;
+  if (view === 'admin' && !isAdmin(currentUser.role)) return;
   currentView = view;
 
   document.querySelectorAll('.nav-item').forEach(el => {
@@ -254,7 +254,7 @@ function renderHome() {
     <div class="card" id="anuncios-section">
       <div class="card-header">
         <h2>📣 Anuncios sin leer${unreadCnt > 0 ? ` <span class="ann-unread-badge">${unreadCnt}</span>` : ''}</h2>
-        ${currentUser.role === 'admin_rrhh' ? '<button class="btn btn-primary btn-sm" onclick="showNewAnnModal()">+ Nuevo Anuncio</button>' : ''}
+        ${isAdmin(currentUser.role) ? '<button class="btn btn-primary btn-sm" onclick="showNewAnnModal()">+ Nuevo Anuncio</button>' : ''}
       </div>
       <div class="card-body">
         ${displayAnns.length ? displayAnns.map(a => {
@@ -265,7 +265,7 @@ function renderHome() {
                 <span class="ann-tag">${a.tag}</span>
                 <span class="ann-date">${fmtDate(a.date)}</span>
                 ${!isRead ? '<span class="ann-new-badge">Nuevo</span>' : ''}
-                ${currentUser.role === 'admin_rrhh' ? `<button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="deleteAnn(${a.id})">✕</button>` : ''}
+                ${isAdmin(currentUser.role) ? `<button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="deleteAnn(${a.id})">✕</button>` : ''}
               </div>
               <div class="ann-title">${a.title}</div>
               <div class="ann-body">${a.body}</div>
@@ -1027,7 +1027,7 @@ function saveContact() {
    ADMIN
 ══════════════════════════════════════════════════════════ */
 function renderAdmin() {
-  if (currentUser.role !== 'admin_rrhh') return '<div class="empty-state"><p>Sin acceso.</p></div>';
+  if (!isAdmin(currentUser.role)) return '<div class="empty-state"><p>Sin acceso.</p></div>';
 
   const pendCerts = Certificates.pending();
   const pendReqs = Requests.pending();
