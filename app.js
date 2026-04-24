@@ -773,8 +773,8 @@ function renderSolicitudesViaje() {
               <label class="radio-option"><input type="radio" name="viaje-hotel" value="si" onchange="onHotelChange()"> Sí requiere</label>
             </div>
           </div>
-          <div id="viaje-zona-wrap" class="form-group hidden">
-            <label>Zona de preferencia</label>
+          <div class="form-group">
+            <label>Zona de preferencia <span class="text-muted">(opcional)</span></label>
             <input type="text" id="viaje-zona" placeholder="Ej: Norte de la ciudad, centro histórico...">
           </div>
           <div class="form-row">
@@ -812,10 +812,7 @@ function renderSolicitudesViaje() {
     </div>`;
 }
 
-function onHotelChange() {
-  const hotelSi = document.querySelector('input[name="viaje-hotel"]:checked')?.value === 'si';
-  document.getElementById('viaje-zona-wrap').classList.toggle('hidden', !hotelSi);
-}
+function onHotelChange() { /* zona always visible */ }
 
 function submitViaje() {
   const cod   = document.getElementById('viaje-cod').value.trim();
@@ -834,7 +831,7 @@ function submitViaje() {
     endDate:        end,
     horarioRegreso: document.getElementById('viaje-h-end').value || null,
     hotel:          hotelVal === 'si',
-    zonaHotel:      hotelVal === 'si' ? (document.getElementById('viaje-zona').value.trim() || null) : null,
+    zonaHotel:      document.getElementById('viaje-zona').value.trim() || null,
     travelers:      parseInt(n),
     costOwner:      document.getElementById('viaje-costs').value,
     status: 'pending', date: today()
