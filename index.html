@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PULSO - Intranet Háptica</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
 </head>
 <body>
 
@@ -66,71 +67,71 @@
         </div>
         <span class="logo-title">PULSO</span>
       </div>
-      <button class="sidebar-close" onclick="toggleSidebar()" title="Colapsar menú">&#8249;</button>
+      <button class="sidebar-close" onclick="toggleSidebar()" title="Colapsar menú"><i class="ph ph-caret-left"></i></button>
     </div>
 
     <nav class="sidebar-nav">
       <div class="nav-section-label">PRINCIPAL</div>
       <a class="nav-item" data-view="home" onclick="navigate('home')">
-        <span class="nav-icon">&#8962;</span>
+        <i class="ph ph-house nav-icon"></i>
         <span class="nav-label">Inicio</span>
       </a>
       <a class="nav-item" data-view="certificados" onclick="navigate('certificados')">
-        <span class="nav-icon">&#128196;</span>
+        <i class="ph ph-certificate nav-icon"></i>
         <span class="nav-label">Certificados</span>
       </a>
       <div class="nav-item nav-parent" id="nav-parent-solicitudes" onclick="toggleNavParent('solicitudes')">
-        <span class="nav-icon">&#128203;</span>
+        <i class="ph ph-clipboard-text nav-icon"></i>
         <span class="nav-label">Solicitudes</span>
-        <span class="nav-chevron" id="nav-chevron-solicitudes">&#8250;</span>
+        <span class="nav-chevron" id="nav-chevron-solicitudes"><i class="ph ph-caret-right"></i></span>
       </div>
       <div id="nav-sub-solicitudes" class="nav-subnav hidden">
         <a class="nav-item nav-child" data-view="solicitudes_materiales" onclick="navigate('solicitudes_materiales')">
-          <span class="nav-icon">&#128230;</span>
+          <i class="ph ph-package nav-icon"></i>
           <span class="nav-label">Materiales</span>
         </a>
         <a class="nav-item nav-child" data-view="solicitudes_viaje" onclick="navigate('solicitudes_viaje')">
-          <span class="nav-icon">&#9992;</span>
+          <i class="ph ph-airplane nav-icon"></i>
           <span class="nav-label">Viaje</span>
         </a>
       </div>
       <a class="nav-item" data-view="ausencias" onclick="navigate('ausencias')">
-        <span class="nav-icon">&#128197;</span>
+        <i class="ph ph-calendar-dots nav-icon"></i>
         <span class="nav-label">Ausencias</span>
       </a>
 
       <div class="nav-section-label">FORMACIÓN</div>
       <a class="nav-item" data-view="sst" onclick="navigate('sst')">
-        <span class="nav-icon">&#9737;</span>
+        <i class="ph ph-shield-check nav-icon"></i>
         <span class="nav-label">SST</span>
       </a>
       <a class="nav-item" data-view="ciberseguridad" onclick="navigate('ciberseguridad')">
-        <span class="nav-icon">&#128274;</span>
+        <i class="ph ph-lock-simple nav-icon"></i>
         <span class="nav-label">Ciberseguridad</span>
       </a>
 
       <div class="nav-section-label">EMPRESA</div>
       <a class="nav-item" data-view="pqr" onclick="navigate('pqr')">
-        <span class="nav-icon">&#128172;</span>
+        <i class="ph ph-chat-circle-text nav-icon"></i>
         <span class="nav-label">PQR</span>
       </a>
       <a class="nav-item" data-view="informacion" onclick="navigate('informacion')">
-        <span class="nav-icon">&#127970;</span>
+        <i class="ph ph-buildings nav-icon"></i>
         <span class="nav-label">Info Corporativa</span>
       </a>
       <a class="nav-item" data-view="perfil" onclick="navigate('perfil')">
-        <span class="nav-icon">&#128100;</span>
+        <i class="ph ph-user-circle nav-icon"></i>
         <span class="nav-label">Mi Perfil</span>
       </a>
 
       <div class="nav-section-label admin-only hidden">ADMINISTRACIÓN</div>
       <a class="nav-item admin-only hidden" data-view="aprobaciones" onclick="navigate('aprobaciones')">
-        <span class="nav-icon">&#9989;</span>
+        <i class="ph ph-check-circle nav-icon"></i>
         <span class="nav-label">Aprobaciones</span>
         <span class="nav-badge" id="aprov-badge" style="display:none"></span>
       </a>
       <a class="nav-item admin-only hidden" data-view="admin" onclick="navigate('admin')">
-        <span class="nav-icon">&#9881;</span>
+        <i class="ph ph-gear nav-icon"></i>
         <span class="nav-label">Panel Admin</span>
       </a>
     </nav>
@@ -150,7 +151,7 @@
   <div id="main-wrapper">
     <header id="app-header">
       <div class="header-left">
-        <button class="hamburger" onclick="toggleSidebar()">&#9776;</button>
+        <button class="hamburger" onclick="toggleSidebar()"><i class="ph ph-list"></i></button>
         <div id="breadcrumb" class="breadcrumb"></div>
       </div>
       <div class="header-right">
@@ -171,7 +172,7 @@
   <div id="modal-box" class="modal-box">
     <div class="modal-header">
       <h3 id="modal-title"></h3>
-      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+      <button class="modal-close" onclick="closeModal()"><i class="ph ph-x"></i></button>
     </div>
     <div id="modal-body" class="modal-body"></div>
   </div>
