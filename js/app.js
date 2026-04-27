@@ -256,7 +256,7 @@ function renderHome() {
         <div class="stat-arrow"><i class="ph ph-caret-right"></i></div>
       </div>
       <div class="stat-card clickable" onclick="navigate('ausencias')" title="Ver ausencias">
-        <div class="stat-icon stat-icon-blue"><i class="ph ph-beach"></i></div>
+        <div class="stat-icon stat-icon-blue"><i class="ph ph-umbrella"></i></div>
         <div>
           <div class="stat-num">${vacDays}</div>
           <div class="stat-label">Días de vacaciones</div>
@@ -467,15 +467,16 @@ function renderCertificados() {
 
           <div class="form-group">
             <label>A quién va dirigida la referencia</label>
-            <div class="cert-dirigida-row">
-              <select id="cert-dirigida" onchange="onDirigidaChange()">
-                <option value="">Sin título</option>
-                <option value="senor">Señor</option>
-                <option value="senora">Señora</option>
-                <option value="senores">Señores</option>
-              </select>
-              <input type="text" id="cert-dirigida-nombre" class="hidden" placeholder="Nombre del destinatario">
-            </div>
+            <select id="cert-dirigida" onchange="onDirigidaChange()">
+              <option value="">Sin título</option>
+              <option value="senor">Señor</option>
+              <option value="senora">Señora</option>
+              <option value="senores">Señores</option>
+            </select>
+          </div>
+          <div id="cert-nombre-group" class="form-group hidden">
+            <label>Nombre del destinatario</label>
+            <input type="text" id="cert-dirigida-nombre" placeholder="Ej. Juan Pérez / Empresa XYZ">
           </div>
 
           <div id="cert-cesantias-section" class="hidden">
@@ -548,11 +549,12 @@ function onCertTypeChange() {
 
 function onDirigidaChange() {
   const val       = document.getElementById('cert-dirigida').value;
+  const group     = document.getElementById('cert-nombre-group');
   const nameInput = document.getElementById('cert-dirigida-nombre');
   if (val) {
-    nameInput.classList.remove('hidden');
+    group.classList.remove('hidden');
   } else {
-    nameInput.classList.add('hidden');
+    group.classList.add('hidden');
     nameInput.value = '';
   }
 }
