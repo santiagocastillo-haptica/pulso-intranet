@@ -1471,6 +1471,9 @@ tr:last-child td { border-bottom: none; }
 .radio-option input[type="radio"]:checked + * { font-weight: 600; color: var(--primary); }
 .radio-option:has(input:checked) { background: #fff4f0; border-color: var(--primary); }
 
+.radio-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.form-hint  { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
 .cert-upload-box {
   border: 2px dashed var(--border);
   border-radius: 10px;

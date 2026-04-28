@@ -2,7 +2,7 @@
    PULSO - Data Layer & localStorage Management
    ═══════════════════════════════════════════════════════ */
 
-const SEED_VERSION = 3;
+const SEED_VERSION = 4;
 
 const SEED = {
   users: [
@@ -75,6 +75,7 @@ const SEED = {
     { id: 7, name: 'Plan Estratégico',     type: 'PDF', icon: 'ph-chart-line-up',    iconColor: '#FD9593', color: 'rgba(253,149,147,.15)', desc: 'Plan estratégico empresarial 2024-2026' },
     { id: 8, name: 'Política SST',         type: 'PDF', icon: 'ph-first-aid-kit',    iconColor: '#FA4616', color: 'rgba(250,70,22,.1)',    desc: 'Política de seguridad y salud en el trabajo' }
   ],
+  cajaMenor: [],
   pqr: [
     { id: 1, userId: 3, anonymous: false, type: 'sugerencia', subject: 'Mejora en proceso de solicitudes', body: 'Sería ideal poder rastrear el estado de las solicitudes en tiempo real desde la plataforma.', status: 'en_revision', date: '2026-04-12' },
     { id: 2, userId: null, anonymous: true, type: 'queja', subject: 'Temperatura en área de trabajo', body: 'El sistema de aire acondicionado en el piso 3 no funciona adecuadamente, afectando la productividad.', status: 'pendiente', date: '2026-04-16' }
@@ -209,6 +210,24 @@ const PQR = {
     const idx = list.findIndex(p => p.id === id);
     if (idx !== -1) { list[idx] = { ...list[idx], ...data }; DB.set('pqr', list); }
   }
+};
+
+const CajaMenor = {
+  all: () => DB.get('cajaMenor') || [],
+  forUser: (uid) => CajaMenor.all().filter(x => x.userId === uid),
+  add(item) {
+    const list = CajaMenor.all();
+    const newX = { ...item, id: Date.now() };
+    list.push(newX);
+    DB.set('cajaMenor', list);
+    return newX;
+  },
+  update(id, data) {
+    const list = CajaMenor.all();
+    const idx = list.findIndex(x => x.id === id);
+    if (idx !== -1) { list[idx] = { ...list[idx], ...data }; DB.set('cajaMenor', list); }
+  },
+  pending: () => CajaMenor.all().filter(x => x.status === 'pending')
 };
 
 const Progress = {

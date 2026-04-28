@@ -205,7 +205,8 @@ function navigate(view) {
     solicitudes: () => { navigate('solicitudes_materiales'); return ''; },
     solicitudes_materiales: renderSolicitudesMateriales,
     solicitudes_viaje: renderSolicitudesViaje,
-    ausencias: renderAusencias, sst: renderSST, ciberseguridad: renderCiberseguridad,
+    ausencias: renderAusencias, caja_menor: renderCajaMenor,
+    sst: renderSST, ciberseguridad: renderCiberseguridad,
     pqr: renderPQR, informacion: renderInformacion, perfil: renderPerfil,
     aprobaciones: renderAprobaciones, admin: renderAdmin
   };
@@ -971,6 +972,289 @@ function submitAbs() {
 }
 
 /* ══════════════════════════════════════════════════════════
+   CAJA MENOR
+══════════════════════════════════════════════════════════ */
+function getISOWeek(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+  const yearStart = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+function currentISOWeek() { return getISOWeek(new Date().toISOString().split('T')[0]); }
+function fmtCOP(val) { return '$' + (parseFloat(val) || 0).toLocaleString('es-CO'); }
+
+let _cmSoporteFile = null;
+
+function renderCajaMenor() {
+  const u = currentUser;
+  const items = CajaMenor.forUser(u.id).sort((a, b) => b.date.localeCompare(a.date));
+  const todayStr = new Date().toISOString().split('T')[0];
+  const weekNum  = currentISOWeek();
+
+  return `
+    <div class="page-title">Caja Menor</div>
+    <div class="page-subtitle">Registra gastos menores y solicita reembolso. El área Administrativa revisará y aprobará cada solicitud.</div>
+
+    <div class="grid-2">
+      <!-- FORMULARIO -->
+      <div class="card">
+        <div class="card-header"><h2>Nuevo Gasto</h2></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Código de proyecto <span class="text-danger">*</span></label>
+            <input type="text" id="cm-proyecto" placeholder="Ej. HAPT-2026-001" oninput="validateCMForm()">
+          </div>
+
+          <div class="form-group">
+            <label>¿Dinero reembolsable?</label>
+            <div class="radio-row">
+              <label class="radio-option"><input type="radio" name="cm_reembolsable" value="si" onchange="validateCMForm()"> Sí</label>
+              <label class="radio-option"><input type="radio" name="cm_reembolsable" value="no" onchange="validateCMForm()"> No</label>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Fecha del gasto <span class="text-danger">*</span></label>
+              <input type="date" id="cm-fecha" value="${todayStr}" onchange="onCMFechaChange()" oninput="validateCMForm()">
+            </div>
+            <div class="form-group">
+              <label>Semana <span class="text-muted" style="font-weight:400;font-size:11px">— semana actual: ${weekNum}</span></label>
+              <input type="number" id="cm-semana" min="1" max="53" value="${weekNum}" placeholder="Nº semana" oninput="validateCMForm()">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Descripción de la actividad <span class="text-danger">*</span></label>
+            <textarea id="cm-descripcion" rows="3" placeholder="Describe el gasto y su propósito..." oninput="validateCMForm()"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Total (COP) <span class="text-danger">*</span></label>
+            <input type="number" id="cm-total" min="0" step="100" placeholder="0" oninput="validateCMForm()">
+          </div>
+
+          <div class="form-group">
+            <label>¿Pediste factura electrónica a Administrativo?</label>
+            <div class="radio-row">
+              <label class="radio-option"><input type="radio" name="cm_factura" value="si" onchange="onFacturaCMChange()"> Sí</label>
+              <label class="radio-option"><input type="radio" name="cm_factura" value="no" onchange="onFacturaCMChange()"> No</label>
+            </div>
+          </div>
+
+          <div id="cm-soporte-group" class="form-group hidden">
+            <label>Soporte del gasto <span class="text-danger">*</span></label>
+            <div class="cert-upload-wrap">
+              <label class="cert-upload-label" for="cm-soporte-input" id="cm-soporte-label">
+                <i class="ph ph-upload-simple"></i> Adjuntar soporte...
+              </label>
+              <input type="file" id="cm-soporte-input" class="hidden" accept=".pdf,.jpg,.jpeg,.png" onchange="onCMSoporteAttached(this)">
+            </div>
+            <div class="form-hint">Obligatorio cuando no hay factura electrónica</div>
+          </div>
+
+          <button id="btn-submit-cm" class="btn btn-primary btn-full" onclick="submitCajaMenor()" disabled>
+            <i class="ph ph-paper-plane-tilt"></i> Enviar solicitud
+          </button>
+        </div>
+      </div>
+
+      <!-- HISTORIAL -->
+      <div class="card">
+        <div class="card-header"><h2>Mis Gastos</h2></div>
+        <div class="card-body" style="padding:0">
+          ${items.length ? `<div class="table-wrap"><table>
+            <thead><tr><th>Proyecto</th><th>Fecha</th><th>Sem.</th><th>Total</th><th>Estado</th></tr></thead>
+            <tbody>
+              ${items.map(it => `<tr>
+                <td>${it.codigoProyecto}</td>
+                <td>${fmtDate(it.fecha)}</td>
+                <td>${it.semana}</td>
+                <td>${fmtCOP(it.total)}</td>
+                <td>${statusBadge(it.status)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table></div>` : `<div class="empty-state"><div class="empty-state-icon"><i class="ph ph-coins"></i></div><p>Aún no tienes gastos registrados.</p></div>`}
+        </div>
+      </div>
+    </div>`;
+}
+
+function onCMFechaChange() {
+  const fecha = document.getElementById('cm-fecha').value;
+  if (fecha) document.getElementById('cm-semana').value = getISOWeek(fecha);
+  validateCMForm();
+}
+
+function onFacturaCMChange() {
+  const val   = document.querySelector('input[name="cm_factura"]:checked')?.value;
+  const group = document.getElementById('cm-soporte-group');
+  if (val === 'no') {
+    group.classList.remove('hidden');
+  } else {
+    group.classList.add('hidden');
+    _cmSoporteFile = null;
+    document.getElementById('cm-soporte-label').innerHTML = '<i class="ph ph-upload-simple"></i> Adjuntar soporte...';
+  }
+  validateCMForm();
+}
+
+function onCMSoporteAttached(input) {
+  const file = input.files[0];
+  _cmSoporteFile = file ? file.name : null;
+  document.getElementById('cm-soporte-label').innerHTML = file
+    ? `<i class="ph ph-check-circle"></i> ${file.name}`
+    : '<i class="ph ph-upload-simple"></i> Adjuntar soporte...';
+  validateCMForm();
+}
+
+function validateCMForm() {
+  const btn = document.getElementById('btn-submit-cm');
+  if (!btn) return;
+  const proyecto = document.getElementById('cm-proyecto')?.value.trim();
+  const fecha    = document.getElementById('cm-fecha')?.value;
+  const desc     = document.getElementById('cm-descripcion')?.value.trim();
+  const total    = parseFloat(document.getElementById('cm-total')?.value);
+  const factura  = document.querySelector('input[name="cm_factura"]:checked')?.value;
+  const needDoc  = factura === 'no';
+  btn.disabled = !(proyecto && fecha && desc && !isNaN(total) && total > 0 && (!needDoc || _cmSoporteFile));
+}
+
+function submitCajaMenor() {
+  const data = {
+    userId:             currentUser.id,
+    codigoProyecto:     document.getElementById('cm-proyecto').value.trim(),
+    reembolsable:       document.querySelector('input[name="cm_reembolsable"]:checked')?.value || 'no',
+    fecha:              document.getElementById('cm-fecha').value,
+    semana:             parseInt(document.getElementById('cm-semana').value) || currentISOWeek(),
+    descripcion:        document.getElementById('cm-descripcion').value.trim(),
+    total:              parseFloat(document.getElementById('cm-total').value),
+    facturaElectronica: document.querySelector('input[name="cm_factura"]:checked')?.value || 'si',
+    soporte:            _cmSoporteFile || null,
+    status:             'pending',
+    date:               new Date().toISOString().split('T')[0],
+    approvedBy:         null,
+    approvedAt:         null,
+    approveNotes:       null
+  };
+  _cmSoporteFile = null;
+  CajaMenor.add(data);
+  showToast('Gasto registrado. Administrativo lo revisará pronto.', 'success');
+  navigate('caja_menor');
+}
+
+function reviewCajaMenor(id) {
+  const item = CajaMenor.all().find(x => x.id === id);
+  if (!item) return;
+  const user = Users.find(item.userId);
+  const isAdm = currentUser.role === 'admin_adm';
+  openModal('Revisar Gasto — Caja Menor', `
+    <div class="profile-field"><span class="profile-field-label">Colaborador</span><span>${user?.name || '—'}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Cargo</span><span>${user?.cargo || '—'}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Código de proyecto</span><span>${item.codigoProyecto}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Fecha / Semana</span><span>${fmtDate(item.fecha)} · Sem. ${item.semana}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Reembolsable</span><span>${item.reembolsable === 'si' ? 'Sí' : 'No'}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Total</span><span style="font-weight:700;font-size:16px;color:var(--color-verde-oscuro)">${fmtCOP(item.total)}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Descripción</span><span>${item.descripcion}</span></div>
+    <div class="profile-field"><span class="profile-field-label">Factura electrónica</span><span>${item.facturaElectronica === 'si' ? 'Sí' : 'No'}</span></div>
+    ${item.soporte ? `<div class="profile-field"><span class="profile-field-label">Soporte</span><span><i class="ph ph-paperclip"></i> ${item.soporte}</span></div>` : ''}
+    ${isAdm && item.status === 'pending' ? `
+    <div class="cert-section-divider" style="margin-top:16px">Decisión</div>
+    <div class="form-group"><label>Notas / Motivo de rechazo</label><textarea id="cm-approve-notes" rows="2" placeholder="Opcional para aprobación, obligatorio para rechazo..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-danger btn-sm" onclick="rejectCajaMenor(${id})"><i class="ph ph-x-circle"></i> Rechazar</button>
+      <button class="btn btn-success" onclick="approveCajaMenor(${id})"><i class="ph ph-check-circle"></i> Aprobar</button>
+    </div>` : `
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">Cerrar</button></div>`}
+  `);
+}
+
+function approveCajaMenor(id) {
+  const notes = document.getElementById('cm-approve-notes')?.value.trim() || null;
+  CajaMenor.update(id, { status: 'approved', approvedBy: currentUser.id, approvedAt: new Date().toISOString().split('T')[0], approveNotes: notes });
+  closeModal();
+  showToast('Gasto aprobado correctamente.', 'success');
+  navigate('admin');
+}
+
+function rejectCajaMenor(id) {
+  const reason = document.getElementById('cm-approve-notes')?.value.trim();
+  if (!reason) { showToast('Ingresa el motivo del rechazo.', 'error'); return; }
+  CajaMenor.update(id, { status: 'rejected', approvedBy: currentUser.id, approvedAt: new Date().toISOString().split('T')[0], approveNotes: reason });
+  closeModal();
+  showToast('Gasto rechazado.', 'success');
+  navigate('admin');
+}
+
+function exportCajaMenor(id) {
+  const item = CajaMenor.all().find(x => x.id === id);
+  if (!item) return;
+  const user     = Users.find(item.userId);
+  const approver = Users.find(item.approvedBy);
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Liquidación Caja Menor — ${user?.name || ''}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,Helvetica,sans-serif;max-width:680px;margin:48px auto;color:#1e293b;font-size:14px}
+    h1{font-size:22px;color:#003237;border-bottom:3px solid #FA4616;padding-bottom:12px;margin-bottom:20px}
+    .subtitle{font-size:12px;color:#64748b;margin-bottom:24px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+    .field{background:#f8fafc;border-radius:6px;padding:10px 14px}
+    .field-label{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
+    .field-value{font-weight:600;color:#1e293b}
+    .desc-box{border-left:4px solid #FA4616;background:#fff8f6;padding:14px 18px;border-radius:0 6px 6px 0;margin-bottom:20px}
+    .desc-label{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+    .total-box{background:#003237;color:#fff;border-radius:8px;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+    .total-lbl{font-size:12px;opacity:.75}
+    .total-val{font-size:26px;font-weight:700}
+    .tag{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .tag-si{background:rgba(0,188,160,.15);color:#006663}
+    .tag-no{background:rgba(251,78,75,.1);color:#FB4E4B}
+    .soporte{font-size:12px;color:#475569;margin-bottom:16px}
+    .notes{background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:10px 14px;font-size:13px;margin-bottom:20px}
+    .sigs{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:56px}
+    .sig-line{border-top:1px solid #cbd5e1;padding-top:8px;font-size:11px;color:#64748b;line-height:1.6}
+    .footer{margin-top:32px;padding-top:14px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center}
+    @media print{body{margin:20px}button{display:none}}
+  </style>
+</head>
+<body>
+  <div class="subtitle">Háptica · Liquidación de Caja Menor</div>
+  <h1><i>Liquidación de Caja Menor</i></h1>
+  <div class="grid">
+    <div class="field"><div class="field-label">Colaborador</div><div class="field-value">${user?.name || '—'}</div></div>
+    <div class="field"><div class="field-label">Cargo</div><div class="field-value">${user?.cargo || '—'}</div></div>
+    <div class="field"><div class="field-label">Código de proyecto</div><div class="field-value">${item.codigoProyecto}</div></div>
+    <div class="field"><div class="field-label">Semana / Fecha</div><div class="field-value">Sem. ${item.semana} · ${fmtDate(item.fecha)}</div></div>
+    <div class="field"><div class="field-label">Reembolsable</div><div class="field-value"><span class="tag ${item.reembolsable==='si'?'tag-si':'tag-no'}">${item.reembolsable==='si'?'Sí':'No'}</span></div></div>
+    <div class="field"><div class="field-label">Factura electrónica</div><div class="field-value"><span class="tag ${item.facturaElectronica==='si'?'tag-si':'tag-no'}">${item.facturaElectronica==='si'?'Sí':'No'}</span></div></div>
+  </div>
+  <div class="desc-box"><div class="desc-label">Descripción de la actividad</div>${item.descripcion}</div>
+  <div class="total-box"><div class="total-lbl">Total solicitado</div><div class="total-val">${fmtCOP(item.total)}</div></div>
+  ${item.soporte ? `<div class="soporte">📎 Soporte adjunto: <strong>${item.soporte}</strong></div>` : ''}
+  ${item.approveNotes ? `<div class="notes"><strong>Notas del aprobador:</strong> ${item.approveNotes}</div>` : ''}
+  <div style="font-size:12px;color:#64748b;margin-bottom:6px">Aprobado por: <strong>${approver?.name || '—'}</strong>${item.approvedAt ? ' · ' + fmtDate(item.approvedAt) : ''}</div>
+  <div class="sigs">
+    <div><div class="sig-line">Firma del colaborador<br><br>${user?.name || ''}<br>${user?.cargo || ''}</div></div>
+    <div><div class="sig-line">Aprobado por Administrativo<br><br>${approver?.name || ''}<br>Área Administrativa</div></div>
+  </div>
+  <div class="footer">Generado desde PULSO · Háptica · ${new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'})}</div>
+</body>
+</html>`;
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `CajaMenor_${(user?.name||'gasto').replace(/\s+/g,'_')}_Sem${item.semana}.html`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Tabla descargada. Ábrela en el navegador para imprimir o pegar en correo.', 'success');
+}
+
+/* ══════════════════════════════════════════════════════════
    SST
 ══════════════════════════════════════════════════════════ */
 function renderSST() {
@@ -1225,7 +1509,8 @@ function renderPerfil() {
   const allReqs = [
     ...Certificates.forUser(u.id).map(c => ({ type: 'Certificado', desc: certTypeName(c.type), date: c.date, status: c.status })),
     ...Requests.forUser(u.id).map(r => ({ type: reqTypeName(r.type), desc: r.description || r.destination, date: r.date, status: r.status })),
-    ...Absences.forUser(u.id).map(a => ({ type: 'Ausencia', desc: absTypeName(a.type), date: a.date, status: a.status }))
+    ...Absences.forUser(u.id).map(a => ({ type: 'Ausencia', desc: absTypeName(a.type), date: a.date, status: a.status })),
+    ...CajaMenor.forUser(u.id).map(x => ({ type: 'Caja Menor', desc: `${x.codigoProyecto} · ${fmtCOP(x.total)}`, date: x.date, status: x.status }))
   ].sort((a, b) => b.date.localeCompare(a.date));
 
   const profileDocs = [
@@ -1569,6 +1854,7 @@ function renderAdmin() {
       <div class="tab" onclick="switchTab('adm','usuarios',this)">Usuarios</div>
       <div class="tab" onclick="switchTab('adm','pqr',this)">PQR (${pendPqr.length})</div>
       <div class="tab" onclick="switchTab('adm','cumples',this)">Cumpleaños</div>
+      ${['admin_adm','admin_gerente'].includes(currentUser.role) ? `<div class="tab" onclick="switchTab('adm','cajamenor',this)">Caja Menor (${CajaMenor.pending().length})</div>` : ''}
     </div>
 
     <!-- SOLICITUDES PENDIENTES -->
@@ -1641,6 +1927,56 @@ function renderAdmin() {
               </div>
             </div>`).join('') : `<div class="empty-state"><div class="empty-state-icon"><i class="ph ph-cake"></i></div><p>No hay cumpleaños este mes.</p></div>`}
         </div>
+      </div>
+    </div>
+
+    ${['admin_adm','admin_gerente'].includes(currentUser.role) ? `
+    <!-- CAJA MENOR -->
+    <div id="adm-tab-cajamenor" class="hidden">
+      ${renderAdminCajaMenor()}
+    </div>` : ''}`;
+}
+
+function renderAdminCajaMenor() {
+  const all   = CajaMenor.all().sort((a, b) => b.date.localeCompare(a.date));
+  const isAdm = currentUser.role === 'admin_adm';
+
+  if (!all.length) return `<div class="card"><div class="card-body"><div class="empty-state"><div class="empty-state-icon"><i class="ph ph-coins"></i></div><p>No hay gastos de caja menor registrados.</p></div></div></div>`;
+
+  const pending  = all.filter(x => x.status === 'pending');
+  const approved = all.filter(x => x.status === 'approved');
+  const rejected = all.filter(x => x.status === 'rejected');
+  const totalApproved = approved.reduce((s, x) => s + (x.total || 0), 0);
+
+  const rowHtml = (x) => {
+    const user = Users.find(x.userId);
+    return `<tr>
+      <td><strong>${user?.name || '—'}</strong></td>
+      <td>${x.codigoProyecto}</td>
+      <td>${fmtDate(x.fecha)} · Sem. ${x.semana}</td>
+      <td>${fmtCOP(x.total)}</td>
+      <td><span class="badge badge-gray">${x.facturaElectronica==='si'?'Sí':'No'}</span></td>
+      <td>${statusBadge(x.status)}</td>
+      <td class="td-actions">
+        <button class="btn btn-outline btn-sm" onclick="reviewCajaMenor(${x.id})">${isAdm && x.status==='pending' ? 'Revisar' : 'Ver'}</button>
+        ${x.status === 'approved' ? `<button class="btn btn-primary btn-sm" onclick="exportCajaMenor(${x.id})"><i class="ph ph-download-simple"></i> Exportar</button>` : ''}
+      </td>
+    </tr>`;
+  };
+
+  return `
+    <div class="grid-3 mb-4" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card"><div class="stat-icon stat-icon-yellow"><i class="ph ph-hourglass"></i></div><div><div class="stat-num">${pending.length}</div><div class="stat-label">Pendientes</div></div></div>
+      <div class="stat-card"><div class="stat-icon stat-icon-green"><i class="ph ph-check-circle"></i></div><div><div class="stat-num">${approved.length}</div><div class="stat-label">Aprobados</div></div></div>
+      <div class="stat-card"><div class="stat-icon stat-icon-blue"><i class="ph ph-coins"></i></div><div><div class="stat-num">${fmtCOP(totalApproved)}</div><div class="stat-label">Total aprobado</div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2><i class="ph ph-coins"></i> Gastos de Caja Menor</h2></div>
+      <div class="card-body" style="padding:0">
+        <div class="table-wrap"><table>
+          <thead><tr><th>Colaborador</th><th>Proyecto</th><th>Fecha / Sem.</th><th>Total</th><th>Factura</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>${all.map(rowHtml).join('')}</tbody>
+        </table></div>
       </div>
     </div>`;
 }
