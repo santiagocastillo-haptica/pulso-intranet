@@ -243,7 +243,7 @@ function renderHome() {
     <div class="welcome-banner">
       <h2>${greeting}, ${u.name.split(' ')[0]}! <i class="ph ph-hand-waving" style="font-size:inherit"></i></h2>
       <p>${dayNames[now.getDay()]}, ${now.getDate()} de ${monthNames[now.getMonth()]} de ${now.getFullYear()}</p>
-      <p class="welcome-date">${u.cargo} · ${u.area}</p>
+      <p class="welcome-date">${u.cargo}</p>
     </div>
 
     <div class="grid-4 mb-4">
@@ -1254,34 +1254,46 @@ function renderPerfil() {
 
     <!-- TAB: DATOS PERSONALES -->
     <div id="profile-tab-datos">
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-header">
-            <h2>Información Personal</h2>
-            <button class="btn btn-outline btn-sm" onclick="editPersonalData()"><i class="ph ph-pencil-simple"></i> Editar</button>
+      <div class="grid-2" style="align-items:start">
+
+        <!-- Columna izquierda: Info Personal + Seguridad Social -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="card">
+            <div class="card-header">
+              <h2>Información Personal</h2>
+              <button class="btn btn-outline btn-sm" onclick="editPersonalData()"><i class="ph ph-pencil-simple"></i> Editar</button>
+            </div>
+            <div class="card-body">
+              <div class="profile-field"><span class="profile-field-label">Nombre completo</span><span class="profile-field-value">${u.name}</span></div>
+              <div class="profile-field"><span class="profile-field-label">Cédula</span><span class="profile-field-value">${u.cedula || '—'}</span></div>
+              <div class="profile-field"><span class="profile-field-label">Pasaporte</span><span class="profile-field-value">${u.pasaporte || '—'}</span></div>
+              <div class="profile-field"><span class="profile-field-label">Correo corporativo</span><span class="profile-field-value">${u.email}</span></div>
+              <div class="profile-field"><span class="profile-field-label">Correo personal</span><span class="profile-field-value">${u.correoPersonal || '—'}</span></div>
+              <div class="profile-field"><span class="profile-field-label">Cargo</span><span class="profile-field-value">${u.cargo}</span></div>
+              <div class="profile-field"><span class="profile-field-label">Fecha de nacimiento</span><span class="profile-field-value">${u.birthday ? fmtDate(u.birthday) : '—'}</span></div>
+              <div class="profile-field"><span class="profile-field-label">Celular</span><span class="profile-field-value">${u.phone || '—'}</span></div>
+              <div class="profile-field"><span class="profile-field-label">Dirección</span><span class="profile-field-value">${u.direccion || '—'}</span></div>
+            </div>
           </div>
-          <div class="card-body">
-            <div class="profile-field"><span class="profile-field-label">Nombre completo</span><span class="profile-field-value">${u.name}</span></div>
-            <div class="profile-field"><span class="profile-field-label">Cédula</span><span class="profile-field-value">${u.cedula || '—'}</span></div>
-            <div class="profile-field"><span class="profile-field-label">Pasaporte</span><span class="profile-field-value">${u.pasaporte || '—'}</span></div>
-            <div class="profile-field"><span class="profile-field-label">Correo corporativo</span><span class="profile-field-value">${u.email}</span></div>
-            <div class="profile-field"><span class="profile-field-label">Correo personal</span><span class="profile-field-value">${u.correoPersonal || '—'}</span></div>
-            <div class="profile-field"><span class="profile-field-label">Cargo</span><span class="profile-field-value">${u.cargo}</span></div>
-            <div class="profile-field"><span class="profile-field-label">Fecha de nacimiento</span><span class="profile-field-value">${u.birthday ? fmtDate(u.birthday) : '—'}</span></div>
-            <div class="profile-field"><span class="profile-field-label">Celular</span><span class="profile-field-value">${u.phone || '—'}</span></div>
-            <div class="profile-field"><span class="profile-field-label">Dirección</span><span class="profile-field-value">${u.direccion || '—'}</span></div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2>Seguridad Social</h2>
+              <button class="btn btn-outline btn-sm" onclick="editPersonalData()"><i class="ph ph-pencil-simple"></i> Editar</button>
+            </div>
+            <div class="card-body">
+              <div class="profile-field"><span class="profile-field-label">EPS</span><span class="profile-field-value">${u.eps || '—'}</span></div>
+              <div class="profile-field"><span class="profile-field-label">Fondo de pensiones</span><span class="profile-field-value">${u.fondoPensiones || '—'}</span></div>
+              <div class="profile-field"><span class="profile-field-label">Cesantías</span><span class="profile-field-value">${u.fondoCesantias || '—'}</span></div>
+              <div class="profile-field"><span class="profile-field-label">Nombre de contacto</span><span class="profile-field-value">${u.nombreContacto || '—'}</span></div>
+              <div class="profile-field"><span class="profile-field-label">Número de contacto</span><span class="profile-field-value">${u.numeroContacto || '—'}</span></div>
+            </div>
           </div>
         </div>
+
+        <!-- Columna derecha: Progreso de Formación -->
         <div class="card">
-          <div class="card-header"><h2>Seguridad Social</h2></div>
-          <div class="card-body">
-            <div class="profile-field"><span class="profile-field-label">EPS</span><span class="profile-field-value">${u.eps || '—'}</span></div>
-            <div class="profile-field"><span class="profile-field-label">Fondo de pensiones</span><span class="profile-field-value">${u.fondoPensiones || '—'}</span></div>
-            <div class="profile-field"><span class="profile-field-label">Cesantías</span><span class="profile-field-value">${u.fondoCesantias || '—'}</span></div>
-            <div class="profile-field"><span class="profile-field-label">Nombre de contacto</span><span class="profile-field-value">${u.nombreContacto || '—'}</span></div>
-            <div class="profile-field"><span class="profile-field-label">Número de contacto</span><span class="profile-field-value">${u.numeroContacto || '—'}</span></div>
-          </div>
-          <div style="border-top:1px solid var(--border);padding:16px 22px 4px"><strong style="font-size:13px">Progreso de Formación</strong></div>
+          <div class="card-header"><h2>Progreso de Formación</h2></div>
           <div class="card-body">
             <div class="mb-4">
               <div class="progress-label"><span>SST</span><span>${Progress.pct(u.id,'sst',DB.get('sst').modules)}%</span></div>
@@ -1293,6 +1305,7 @@ function renderPerfil() {
             </div>
           </div>
         </div>
+
       </div>
     </div>
 
@@ -1576,7 +1589,7 @@ function renderAdmin() {
                 <td>${u.email}</td>
                 <td>${u.cargo}</td>
                 <td>${u.area}</td>
-                <td><span class="role-badge role-${u.role}" style="background:#e2e8f0;color:#475569">${roleLabel(u.role)}</span></td>
+                <td><span class="role-badge role-${u.role}">${roleLabel(u.role)}</span></td>
                 <td>${u.active ? '<span class="badge badge-approved">Activo</span>' : '<span class="badge badge-rejected">Inactivo</span>'}</td>
                 <td>${u.id !== currentUser.id ? `<button class="btn ${u.active?'btn-warning':'btn-success'} btn-sm" onclick="toggleUser(${u.id})">${u.active?'Desactivar':'Activar'}</button>` : '<span class="text-muted text-sm">—</span>'}</td>
               </tr>`).join('')}
