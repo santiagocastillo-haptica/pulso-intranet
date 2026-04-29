@@ -1035,7 +1035,7 @@ function renderCajaMenor() {
           </div>
 
           <div class="form-group">
-            <label>¿Pediste factura electrónica a Administrativo?</label>
+            <label>¿Pediste factura electrónica al correo administrativo?</label>
             <div class="radio-row">
               <label class="radio-option"><input type="radio" name="cm_factura" value="si" onchange="onFacturaCMChange()"> Sí</label>
               <label class="radio-option"><input type="radio" name="cm_factura" value="no" onchange="onFacturaCMChange()"> No</label>
@@ -1043,14 +1043,12 @@ function renderCajaMenor() {
           </div>
 
           <div id="cm-soporte-group" class="form-group hidden">
-            <label>Soporte del gasto <span class="text-danger">*</span></label>
-            <div class="cert-upload-wrap">
-              <label class="cert-upload-label" for="cm-soporte-input" id="cm-soporte-label">
-                <i class="ph ph-upload-simple"></i> Adjuntar soporte...
-              </label>
-              <input type="file" id="cm-soporte-input" class="hidden" accept=".pdf,.jpg,.jpeg,.png" onchange="onCMSoporteAttached(this)">
+            <label>Soporte del gasto</label>
+            <div class="cert-upload-box" onclick="document.getElementById('cm-soporte-input').click()">
+              <i class="ph ph-paperclip cert-upload-icon"></i>
+              <span id="cm-soporte-label">Adjuntar soporte...</span>
             </div>
-            <div class="form-hint">Obligatorio cuando no hay factura electrónica</div>
+            <input type="file" id="cm-soporte-input" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onchange="onCMSoporteAttached(this)">
           </div>
 
           <button id="btn-submit-cm" class="btn btn-primary btn-full" onclick="submitCajaMenor()" disabled>
@@ -1089,12 +1087,12 @@ function onCMFechaChange() {
 function onFacturaCMChange() {
   const val   = document.querySelector('input[name="cm_factura"]:checked')?.value;
   const group = document.getElementById('cm-soporte-group');
-  if (val === 'no') {
+  if (val) {
     group.classList.remove('hidden');
   } else {
     group.classList.add('hidden');
     _cmSoporteFile = null;
-    document.getElementById('cm-soporte-label').innerHTML = '<i class="ph ph-upload-simple"></i> Adjuntar soporte...';
+    document.getElementById('cm-soporte-label').textContent = 'Adjuntar soporte...';
   }
   validateCMForm();
 }
@@ -1102,9 +1100,7 @@ function onFacturaCMChange() {
 function onCMSoporteAttached(input) {
   const file = input.files[0];
   _cmSoporteFile = file ? file.name : null;
-  document.getElementById('cm-soporte-label').innerHTML = file
-    ? `<i class="ph ph-check-circle"></i> ${file.name}`
-    : '<i class="ph ph-upload-simple"></i> Adjuntar soporte...';
+  document.getElementById('cm-soporte-label').textContent = file ? file.name : 'Adjuntar soporte...';
   validateCMForm();
 }
 
