@@ -1006,7 +1006,7 @@ function renderCajaMenor() {
           </div>
 
           <div class="form-group">
-            <label>¿Dinero reembolsable?</label>
+            <label>¿Dinero reembolsable? <span class="text-danger">*</span></label>
             <div class="radio-row">
               <label class="radio-option"><input type="radio" name="cm_reembolsable" value="si" onchange="validateCMForm()"> Sí</label>
               <label class="radio-option"><input type="radio" name="cm_reembolsable" value="no" onchange="validateCMForm()"> No</label>
@@ -1019,7 +1019,7 @@ function renderCajaMenor() {
               <input type="date" id="cm-fecha" value="${todayStr}" onchange="onCMFechaChange()" oninput="validateCMForm()">
             </div>
             <div class="form-group">
-              <label>Semana <span class="text-muted" style="font-weight:400;font-size:11px">— semana actual: ${weekNum}</span></label>
+              <label>Semana <span class="text-danger">*</span> <span class="text-muted" style="font-weight:400;font-size:11px">— actual: ${weekNum}</span></label>
               <input type="number" id="cm-semana" min="1" max="53" value="${weekNum}" placeholder="Nº semana" oninput="validateCMForm()">
             </div>
           </div>
@@ -1035,7 +1035,7 @@ function renderCajaMenor() {
           </div>
 
           <div class="form-group">
-            <label>¿Pediste factura electrónica al correo administrativo?</label>
+            <label>¿Pediste factura electrónica al correo administrativo? <span class="text-danger">*</span></label>
             <div class="radio-row">
               <label class="radio-option"><input type="radio" name="cm_factura" value="si" onchange="onFacturaCMChange()"> Sí</label>
               <label class="radio-option"><input type="radio" name="cm_factura" value="no" onchange="onFacturaCMChange()"> No</label>
@@ -1043,7 +1043,7 @@ function renderCajaMenor() {
           </div>
 
           <div id="cm-soporte-group" class="form-group hidden">
-            <label>Soporte del gasto</label>
+            <label>Soporte del gasto <span class="text-danger">*</span></label>
             <div class="cert-upload-box" onclick="document.getElementById('cm-soporte-input').click()">
               <i class="ph ph-paperclip cert-upload-icon"></i>
               <span id="cm-soporte-label">Adjuntar soporte...</span>
@@ -1107,13 +1107,18 @@ function onCMSoporteAttached(input) {
 function validateCMForm() {
   const btn = document.getElementById('btn-submit-cm');
   if (!btn) return;
-  const proyecto = document.getElementById('cm-proyecto')?.value.trim();
-  const fecha    = document.getElementById('cm-fecha')?.value;
-  const desc     = document.getElementById('cm-descripcion')?.value.trim();
-  const total    = parseFloat(document.getElementById('cm-total')?.value);
-  const factura  = document.querySelector('input[name="cm_factura"]:checked')?.value;
-  const needDoc  = factura === 'no';
-  btn.disabled = !(proyecto && fecha && desc && !isNaN(total) && total > 0 && (!needDoc || _cmSoporteFile));
+  const proyecto     = document.getElementById('cm-proyecto')?.value.trim();
+  const fecha        = document.getElementById('cm-fecha')?.value;
+  const semana       = parseInt(document.getElementById('cm-semana')?.value);
+  const desc         = document.getElementById('cm-descripcion')?.value.trim();
+  const total        = parseFloat(document.getElementById('cm-total')?.value);
+  const reembolsable = document.querySelector('input[name="cm_reembolsable"]:checked')?.value;
+  const factura      = document.querySelector('input[name="cm_factura"]:checked')?.value;
+  btn.disabled = !(
+    proyecto && fecha && semana >= 1 && semana <= 53 &&
+    desc && !isNaN(total) && total > 0 &&
+    reembolsable && factura && _cmSoporteFile
+  );
 }
 
 function submitCajaMenor() {
